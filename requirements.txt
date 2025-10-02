@@ -1,0 +1,27 @@
+
+# --- Core LangChain Libraries ---
+# langchain==0.3.7
+# langchain-community==0.3.5
+# langchain-core==0.3.15
+# langchain-google-genai==2.0.4
+
+# --- Data Handling & Environment ---
+pandas==2.2.3
+python-dotenv==1.0.1
+
+# --- Database ---
+psycopg2-binary==2.9.9
+pgvector==0.2.4
+
+# --- Web Framework ---
+flask==3.1.0
+flask-cors==5.0.0
+pywebview==5.3.1
+
+# --- OCR Dependencies for Image-based PDFs ---
+pytesseract==0.3.10
+pdf2image==1.17.0
+pillow==10.4.0
+
+# --- Opcional: Para rodar em um notebook Jupyter ---
+jupyter

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neoson - Sistema Multi-Agente de IA</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_neoson.css') }}">
+</head>
+<body>
+    <!-- Cabeçalho do Neoson -->
+    <div class="neoson-header">
+        <div class="neoson-face">
+            <div class="neoson-antenna">
+                <div class="antenna-ball"></div>
+            </div>
+            <div class="neoson-eyes">
+                <div class="eye left-eye">
+                    <div class="pupil left-pupil"></div>
+                    <div class="eye-shine"></div>
+                </div>
+                <div class="eye right-eye">
+                    <div class="pupil right-pupil"></div>
+                    <div class="eye-shine"></div>
+                </div>
+            </div>
+            <div class="neoson-mouth">
+                <div class="mouth-line"></div>
+            </div>
+            <div class="thinking-indicator">
+                <div class="thinking-dot"></div>
+                <div class="thinking-dot"></div>
+                <div class="thinking-dot"></div>
+            </div>
+        </div>
+        
+        <div class="neoson-info">
+            <h1 class="neoson-name">NEOSON</h1>
+            <p class="neoson-subtitle">Sistema Multi-Agente de Inteligência Artificial</p>
+            <div class="status-indicator ready">
+                <i class="fas fa-circle"></i>
+                <span>Sistema Pronto</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agentes Especializados -->
+    <div class="container">
+        <div class="agents-panel">
+            <h3><i class="fas fa-users"></i> Agentes Especializados</h3>
+            <div class="agents-grid">
+                <div class="agent-card" data-agent="ana">
+                    <div class="agent-avatar ana">👩‍💼</div>
+                    <div class="agent-info">
+                        <h4>Ana</h4>
+                        <p>Especialista em RH</p>
+                        <div class="agent-status">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="agent-card ti-coordinator" data-agent="ti-system">
+                    <div class="agent-avatar ti-system">🎯</div>
+                    <div class="agent-info">
+                        <h4>Sistema TI</h4>
+                        <p>Coordenador Hierárquico</p>
+                        <div class="agent-status">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="sub-agents-indicator">
+                        <span>4 sub-especialistas</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-agentes TI -->
+            <div class="sub-agents-section">
+                <h4><i class="fas fa-sitemap"></i> Sub-especialistas TI</h4>
+                <div class="sub-agents-grid">
+                    <div class="sub-agent-card" data-subagent="governance">
+                        <div class="sub-agent-avatar governance">🏛️</div>
+                        <div class="sub-agent-info">
+                            <h5>Ariel</h5>
+                            <p>Governança TI</p>
+                            <span class="expertise">LGPD, Compliance, Delivery Methods</span>
+                            <div class="sub-agent-status">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sub-agent-card" data-subagent="infrastructure">
+                        <div class="sub-agent-avatar infrastructure">�️</div>
+                        <div class="sub-agent-info">
+                            <h5>Alice</h5>
+                            <p>Infraestrutura</p>
+                            <span class="expertise">Servidores, Redes, Monitoramento</span>
+                            <div class="sub-agent-status">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sub-agent-card" data-subagent="development">
+                        <div class="sub-agent-avatar development">⚡</div>
+                        <div class="sub-agent-info">
+                            <h5>Carlos</h5>
+                            <p>Desenvolvimento</p>
+                            <span class="expertise">APIs, Deploy, Arquitetura</span>
+                            <div class="sub-agent-status">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sub-agent-card" data-subagent="enduser">
+                        <div class="sub-agent-avatar enduser">🎧</div>
+                        <div class="sub-agent-info">
+                            <h5>Marina</h5>
+                            <p>Usuário Final</p>
+                            <span class="expertise">Senhas, Acessos, Suporte</span>
+                            <div class="sub-agent-status">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Persona Selection -->
+            <div class="persona-section">
+                <h2><i class="fas fa-user-tag"></i> Selecione ou Crie seu Perfil</h2>
+                
+                <!-- Botões de Alternância -->
+                <div class="persona-toggle">
+                    <button class="toggle-btn active" id="presetToggle">
+                        <i class="fas fa-users"></i> Perfis Pré-definidos
+                    </button>
+                    <button class="toggle-btn" id="customToggle">
+                        <i class="fas fa-user-plus"></i> Criar Persona Personalizada
+                    </button>
+                </div>
+
+                <!-- Perfis Pré-definidos -->
+                <div class="persona-grid" id="presetPersonas">
+                    <div class="persona-card selected" data-persona="Gerente">
+                        <div class="persona-header">
+                            <div class="persona-avatar gerente">👨‍💼</div>
+                            <div>
+                                <div class="persona-name">Gerente</div>
+                                <div class="persona-role">Liderança • Nível 3</div>
+                            </div>
+                        </div>
+                        <div class="persona-details">
+                            Perfil de gerência com acesso a informações estratégicas e dados de equipe.
+                        </div>
+                    </div>
+                    
+                    <div class="persona-card" data-persona="Funcionário">
+                        <div class="persona-header">
+                            <div class="persona-avatar funcionario">👨‍💻</div>
+                            <div>
+                                <div class="persona-name">Funcionário</div>
+                                <div class="persona-role">Operacional • Nível 2</div>
+                            </div>
+                        </div>
+                        <div class="persona-details">
+                            Perfil operacional com acesso a informações básicas e procedimentos padrão.
+                        </div>
+                    </div>
+
+                    <div class="persona-card" data-persona="Diretor">
+                        <div class="persona-header">
+                            <div class="persona-avatar diretor">👔</div>
+                            <div>
+                                <div class="persona-name">Diretor</div>
+                                <div class="persona-role">Executivo • Nível 5</div>
+                            </div>
+                        </div>
+                        <div class="persona-details">
+                            Perfil executivo com acesso total a informações estratégicas e confidenciais.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Criador de Persona Personalizada -->
+                <div class="custom-persona-creator" id="customPersonaCreator" style="display: none;">
+                    <div class="creator-grid">
+                        <div class="creator-section">
+                            <h3><i class="fas fa-user"></i> Informações Pessoais</h3>
+                            <div class="form-group">
+                                <label for="customName">Nome Completo</label>
+                                <input type="text" id="customName" placeholder="Ex: João Silva">
+                            </div>
+                            <div class="form-group">
+                                <label for="customRole">Cargo</label>
+                                <input type="text" id="customRole" placeholder="Ex: Analista de Sistemas">
+                            </div>
+                        </div>
+
+                        <div class="creator-section">
+                            <h3><i class="fas fa-building"></i> Informações Organizacionais</h3>
+                            <div class="form-group">
+                                <label for="customDepartment">Departamento</label>
+                                <select id="customDepartment">
+                                    <option value="">Selecione...</option>
+                                    <option value="RH">Recursos Humanos</option>
+                                    <option value="TI">Tecnologia da Informação</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Vendas">Vendas</option>
+                                    <option value="Financeiro">Financeiro</option>
+                                    <option value="Operações">Operações</option>
+                                    <option value="Jurídico">Jurídico</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="customLevel">Nível Hierárquico</label>
+                                <select id="customLevel">
+                                    <option value="">Selecione...</option>
+                                    <option value="1">Nível 1 - Estagiário</option>
+                                    <option value="2">Nível 2 - Junior</option>
+                                    <option value="3">Nível 3 - Pleno/Supervisor</option>
+                                    <option value="4">Nível 4 - Sênior/Gerente</option>
+                                    <option value="5">Nível 5 - Diretor/Executivo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="creator-section">
+                            <h3><i class="fas fa-globe"></i> Localização e Projetos</h3>
+                            <div class="form-group">
+                                <label for="customGeography">Geografia</label>
+                                <select id="customGeography">
+                                    <option value="">Selecione...</option>
+                                    <option value="BR">Brasil</option>
+                                    <option value="USA">Estados Unidos</option>
+                                    <option value="EU">Europa</option>
+                                    <option value="ASIA">Ásia</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="customProjects">Projetos</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="ALL" id="allProjects">
+                                        <span class="checkmark"></span>
+                                        Todos os Projetos
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="Apollo">
+                                        <span class="checkmark"></span>
+                                        Projeto Apollo
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="Phoenix">
+                                        <span class="checkmark"></span>
+                                        Projeto Phoenix
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="Neptune">
+                                        <span class="checkmark"></span>
+                                        Projeto Neptune
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="creator-actions">
+                        <button class="create-persona-btn" id="createPersonaBtn">
+                            <i class="fas fa-save"></i>
+                            Criar Persona
+                        </button>
+                        <button class="clear-form-btn" id="clearFormBtn">
+                            <i class="fas fa-trash"></i>
+                            Limpar Formulário
+                        </button>
+                    </div>
+
+                    <!-- Preview da Persona Criada -->
+                    <div class="persona-preview" id="personaPreview" style="display: none;">
+                        <h4><i class="fas fa-eye"></i> Preview da Persona</h4>
+                        <div class="preview-card">
+                            <div class="preview-avatar" id="previewAvatar">👤</div>
+                            <div class="preview-info">
+                                <div class="preview-name" id="previewName">Nome da Persona</div>
+                                <div class="preview-details" id="previewDetails">Detalhes da persona aparecerão aqui</div>
+                                <div class="preview-permissions">
+                                    <h5>Permissões de Acesso:</h5>
+                                    <div class="permission-tags" id="previewPermissions"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <h2><i class="fas fa-comments"></i> Converse com o Neoson</h2>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="welcome-message">
+                            <div class="message-avatar neoson-avatar">🤖</div>
+                            <div class="message-content">
+                                <h3>Bem-vindo ao Sistema Neoson!</h3>
+                                <p>Sou o Neoson, seu assistente inteligente multi-agente. Posso ajudar você com:</p>
+                                <ul>
+                                    <li><strong>Questões de RH:</strong> Delegarei para a Ana, especialista em recursos humanos</li>
+                                    <li><strong>Questões de TI:</strong> Sistema hierárquico com 4 sub-especialistas:
+                                        <ul class="sub-list">
+                                            <li>🏛️ <strong>Ariel (Governança):</strong> LGPD, Compliance, Delivery Methods</li>
+                                            <li>🖥️ <strong>Alice (Infraestrutura):</strong> Servidores, Redes, Monitoramento</li>
+                                            <li>⚡ <strong>Carlos (Desenvolvimento):</strong> APIs, Deploy, Arquitetura</li>
+                                            <li>🎧 <strong>Marina (Usuário Final):</strong> Senhas, Acessos, Suporte</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Coordenação Inteligente:</strong> Escolho automaticamente o melhor especialista</li>
+                                </ul>
+                                <p>Como posso ajudá-lo hoje?</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form class="chat-form" id="chatForm">
+                        <div class="input-group">
+                            <textarea
+                                id="mensagem"
+                                placeholder="Digite sua mensagem aqui... (Ctrl + Enter para enviar)"
+                                maxlength="1000"
+                                rows="3"
+                            ></textarea>
+                        </div>
+                        <div class="input-footer">
+                            <div class="char-counter">0/1000</div>
+                            <button type="submit" id="sendBtn">
+                                <i class="fas fa-paper-plane"></i>
+                                Enviar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Memory Controls -->
+            <div class="memory-section">
+                <h2><i class="fas fa-brain"></i> Controle de Memória</h2>
+                <p>Limpe a memória de conversas quando necessário:</p>
+                <button class="clear-memory-btn" id="clearMemoryBtn">
+                    <i class="fas fa-trash-alt"></i>
+                    Limpar Memória
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Overlay -->
+    <div class="processing-overlay" id="processingOverlay">
+        <div class="processing-content">
+            <div class="neoson-processing">
+                <div class="processing-avatar">🤖</div>
+                <h3>Neoson Processando</h3>
+                <p>Analisando sua solicitação e selecionando o melhor agente...</p>
+            </div>
+
+            <div class="processing-steps">
+                <div class="step" id="step-analyzing">
+                    <span><i class="fas fa-search"></i> Analisando solicitação</span>
+                    <div class="step-loader"></div>
+                </div>
+                
+                <div class="step" id="step-classifying">
+                    <span><i class="fas fa-tags"></i> Classificando tipo de pergunta</span>
+                    <div class="step-loader"></div>
+                </div>
+                
+                <div class="step" id="step-delegating">
+                    <span><i class="fas fa-hand-point-right"></i> Delegando para especialista</span>
+                    <div class="step-loader"></div>
+                </div>
+            </div>
+
+            <div class="agent-handoff">
+                <div class="handoff-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="target-agent">
+                    <div class="agent-avatar neoson">🤖</div>
+                    <h4>Agente</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script_neoson.js') }}"></script>
+</body>
+</html>
