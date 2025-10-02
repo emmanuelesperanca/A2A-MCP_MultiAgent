@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 from agente_rh import AgenteRH
 from ti_coordinator import criar_ti_coordinator
 
+# Core configuration
+from core.config import config, print_config_summary, validate_config
+
 # LangChain para coordenação
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import numpy as np
@@ -90,24 +93,31 @@ class Neoson:
         """Inicializa o Neoson e todos os agentes especializados"""
         print("🚀 === INICIALIZANDO NEOSON - AGENTE MASTER ===")
         
-        # Carregar configurações
-        load_dotenv()
-        api_key = os.getenv('OPENAI_API_KEY')
+        # Validar configurações centralizadas
+        validation_results = validate_config()
+        if not all(validation_results.values()):
+            print("❌ Erro na validação de configurações:")
+            for component, valid in validation_results.items():
+                status = "✅" if valid else "❌"
+                print(f"  {status} {component}")
+            raise ValueError("Configurações inválidas")
         
-        if not api_key:
-            raise ValueError("Chave da API OpenAI não encontrada")
+        print("✅ Configurações validadas com sucesso")
+        
+        # Usar configuração centralizada
+        api_key = config.openai.api_key
         
         # Inicializar LLM coordenador e embeddings
         self.llm_coordenador = ChatOpenAI(
             api_key=api_key,
-            model="gpt-4o-mini",
+            model=config.openai.chat_model,
             temperature=0.1,
             max_tokens=50
         )
         
         self.embeddings = OpenAIEmbeddings(
             api_key=api_key,
-            model="text-embedding-3-small"
+            model=config.openai.embedding_model
         )
         
         print("--- 🤖 Inicializando agentes especializados... ---")

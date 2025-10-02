@@ -78,6 +78,50 @@ class HierarchicalAgent(ABC):
         
         logger.info(f"Delegação hierárquica: '{query[:50]}...' -> {best_match} (score: {best_score:.3f})")
         return best_match, best_score
+
+    def find_top_candidates(self, query: str, top_k: int = 3) -> List[Tuple[str, float]]:
+        """
+        Encontra os top-k candidatos para fallback chain.
+        
+        Args:
+            query: Pergunta do usuário
+            top_k: Número máximo de candidatos a retornar
+            
+        Returns:
+            Lista ordenada de (agente, score) por score decrescente
+        """
+        candidates = []
+        query_lower = query.lower()
+        
+        print(f"🔍 Analisando query: '{query_lower}'")
+        print(f"📋 Total de regras: {len(self.subspecialty_rules)}")
+        
+        for rule in self.subspecialty_rules:
+            matches = 0
+            matched_keywords = []
+            
+            for keyword in rule.keywords:
+                if keyword.lower() in query_lower:
+                    matches += 1
+                    matched_keywords.append(keyword)
+            
+            if matches > 0:
+                score = matches / len(rule.keywords)
+                print(f"🎯 Regra '{rule.name}' → {matches} matches, score: {score:.3f}, threshold: {rule.confidence_threshold}")
+                print(f"   Keywords matched: {matched_keywords}")
+                
+                if score >= rule.confidence_threshold:
+                    candidates.append((rule.target_subagent, score))
+                    print(f"   ✅ Adicionado candidato: {rule.target_subagent}")
+                else:
+                    print(f"   ❌ Score abaixo do threshold")
+            else:
+                print(f"⚪ Regra '{rule.name}' → 0 matches")
+        
+        # Ordenar por score decrescente e pegar os top-k
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        print(f"🏆 Candidatos finais: {candidates}")
+        return candidates[:top_k]
     
     @abstractmethod
     def process_with_hierarchy(self, query: str, user_profile: Dict) -> str:
@@ -168,49 +212,164 @@ class TIHierarchicalAgent(HierarchicalAgent):
         self.add_subspecialty_rule(infra_rule)
         self.add_subspecialty_rule(dev_rule)
     
+    def _is_generic_response(self, response: str) -> bool:
+        """Verifica se a resposta é genérica (indica que o agente não encontrou dados específicos)."""
+        generic_indicators = [
+            "não localizei informações específicas sobre",
+            "não localizei essa informação específica",
+            "não tenho informações específicas",
+            "não encontrei dados específicos",
+            "preciso de mais informações",
+            "não possuo dados detalhados",
+            "não encontrei essa informação",
+            "não tenho acesso a essa informação",
+            "informações não disponíveis",
+            "dados não encontrados",
+            "não consta em nossa base",
+            "não foi possível localizar",
+            "não possuo informações sobre",
+            "não há dados disponíveis",
+            "informação não encontrada",
+            "desculpe, mas não encontrei",
+            "lamento, mas não possuo"
+        ]
+        
+        response_lower = response.lower()
+        is_generic = any(indicator in response_lower for indicator in generic_indicators)
+        
+        # Debug logging para acompanhar detecção
+        if is_generic:
+            print(f"🔍 Resposta genérica detectada: '{response[:100]}...'")
+        
+        return is_generic
+    
+    def _get_delegation_reason(self, query: str, agent_type: str, score: float) -> str:
+        """Explica o motivo da delegação para transparência."""
+        query_lower = query.lower()
+        
+        reasons = {
+            'governance': {
+                'keywords': ['regulamentação', 'anvisa', 'política', 'compliance', 'segurança', 'auditoria', 'norma', 'lei', 'decreto'],
+                'description': 'Especialista em regulamentações, políticas e compliance'
+            },
+            'infrastructure': {
+                'keywords': ['servidor', 'rede', 'infraestrutura', 'hardware', 'sistema', 'performance'],  
+                'description': 'Especialista em infraestrutura e sistemas'
+            },
+            'dev': {
+                'keywords': ['desenvolvimento', 'código', 'programação', 'api', 'software', 'aplicação'],
+                'description': 'Especialista em desenvolvimento de software'
+            },
+            'enduser': {
+                'keywords': ['usuário', 'interface', 'suporte', 'treinamento', 'manual', 'tutorial'],
+                'description': 'Especialista em suporte ao usuário final'
+            }
+        }
+        
+        if agent_type in reasons:
+            agent_info = reasons[agent_type]
+            matched_keywords = [kw for kw in agent_info['keywords'] if kw in query_lower]
+            
+            if matched_keywords:
+                return f"{agent_info['description']}. Palavras-chave identificadas: {', '.join(matched_keywords)}"
+            else:
+                return f"{agent_info['description']}. Score de relevância: {score:.3f}"
+        
+        return f"Agente com maior score de relevância ({score:.3f}) para esta consulta"
+    
     def process_with_hierarchy(self, query: str, user_profile: Dict) -> str:
-        """Processa pergunta usando hierarquia de sub-especialistas."""
+        """Processa pergunta usando hierarquia de sub-especialistas com fallback chain."""
         
-        print(f"🔍 TI Hierarchy analisando: '{query[:50]}...'")
+        # Inicializar cadeia de decisão para transparência
+        decision_chain = []
+        decision_chain.append(f"🔍 **Análise inicial**: TI Hierarchy analisando pergunta sobre '{query[:50]}...'")
         
-        # 1. Tentar encontrar sub-agente mais adequado
-        best_subagent, score = self.find_best_subagent(query)
+        # 1. Obter top 3 candidatos para fallback chain
+        candidates = self.find_top_candidates(query, top_k=3)
         
-        print(f"📊 TI Hierarchy: Melhor match = {best_subagent}, Score = {score:.3f}")
-        logger.info(f"TI Hierarchy: Best match = {best_subagent}, Score = {score:.3f}")
-        
-        # 2. Se encontrou sub-agente específico, delegar
-        if best_subagent and best_subagent in self.sub_agents:
-            sub_agent = self.sub_agents[best_subagent]
+        if candidates:
+            candidate_info = [(agent, f'{score:.3f}') for agent, score in candidates]
+            decision_chain.append(f"🎯 **Candidatos identificados**: {candidate_info}")
+            decision_chain.append("📊 **Critério de seleção**: Relevância por palavras-chave e especialidade")
             
-            print(f"✅ Delegando para sub-especialista: {sub_agent.config.name}")
-            logger.info(f"🔄 TI delegando para sub-especialista: {sub_agent.config.name}")
-            
-            try:
-                # Processa com o sub-agente especializado
-                print(f"🤖 Processando com {sub_agent.config.name}...")
-                result = sub_agent.processar_pergunta(query, user_profile)
+            # 2. Tentar cada candidato em ordem de score
+            for i, (candidate_agent, score) in enumerate(candidates):
+                if candidate_agent not in self.sub_agents:
+                    continue
+                    
+                sub_agent = self.sub_agents[candidate_agent]
                 
-                # Adiciona attribution da hierarquia
-                attribution = f"\n\n📋 Resposta fornecida por: {sub_agent.config.name} ({sub_agent.config.specialty})"
-                attribution += "\n🎯 Coordenado pelo time de TI"
+                # Log da delegação com motivo
+                delegation_reason = self._get_delegation_reason(query, candidate_agent, score)
+                decision_chain.append(f"🔄 **Tentativa #{i+1}**: Delegando para **{sub_agent.config.name}** (score: {score:.3f})")
+                decision_chain.append(f"💡 **Motivo**: {delegation_reason}")
                 
-                self.delegation_history.append(f"{query[:50]}... -> {best_subagent}")
+                logger.info(f"🔄 TI delegando para sub-especialista: {sub_agent.config.name}")
                 
-                return result + attribution
-                
-            except Exception as e:
-                logger.error(f"Erro no sub-agente {best_subagent}: {e}")
-                # Fallback para agente TI principal
+                try:
+                    # Processa com o sub-agente especializado
+                    print(f"🤖 Chamando {sub_agent.config.name} (tabela: {sub_agent.config.table_name})")
+                    result = sub_agent.processar_pergunta(query, user_profile)
+                    
+                    print(f"📝 {sub_agent.config.name} retornou {len(result)} caracteres")
+                    print(f"🔍 Primeiros 100 chars: '{result[:100]}...'")
+                    
+                    # Verificar se o resultado é genérico (indica que não achou dados)
+                    if self._is_generic_response(result):
+                        print(f"🔍 Resposta detectada como genérica por {sub_agent.config.name}")
+                        decision_chain.append(f"❌ **Resultado**: {sub_agent.config.name} não encontrou informações específicas")
+                        if i < len(candidates) - 1:  # Se não é o último candidato
+                            decision_chain.append("⚡ **Ação**: Tentando próximo especialista na hierarquia...")
+                        continue
+                    
+                    # Sucesso! Adiciona cadeia de decisão transparente
+                    decision_chain.append(f"✅ **Sucesso**: {sub_agent.config.name} encontrou informações relevantes!")
+                    
+                    # Montar resposta com transparência completa
+                    transparency_section = "\n\n" + "="*60 + "\n"
+                    transparency_section += "🧠 **CADEIA DE DECISÃO E RACIOCÍNIO**\n"
+                    transparency_section += "="*60 + "\n"
+                    for step in decision_chain:
+                        transparency_section += f"{step}\n"
+                    
+                    transparency_section += f"\n📋 **Resposta final fornecida por**: {sub_agent.config.name} ({sub_agent.config.specialty})"
+                    if i > 0:
+                        transparency_section += f"\n🔄 **Redirecionamentos**: {i} tentativa(s) anteriores"
+                    transparency_section += "\n🎯 **Coordenado por**: Sistema TI Hierárquico"
+                    transparency_section += "\n" + "="*60
+                    
+                    self.delegation_history.append(f"{query[:50]}... -> {candidate_agent}")
+                    
+                    return result + transparency_section
+                    
+                except Exception as e:
+                    logger.error(f"Erro no sub-agente {candidate_agent}: {e}")
+                    print(f"❌ Erro em {sub_agent.config.name}, tentando próximo...")
+                    continue
+        else:
+            decision_chain.append("❓ **Resultado da análise**: Nenhum especialista específico identificado")
+            decision_chain.append("🔄 **Ação**: Redirecionando diretamente para TI geral")
         
-        # 3. Se não encontrou sub-agente ou deu erro, usar TI principal
-        print("⚠️ Nenhum sub-agente específico encontrado, usando TI geral")
+        # 3. Se nenhum candidato funcionou, usar TI principal
+        decision_chain.append("❌ **Resultado**: Nenhum especialista encontrou informações específicas")
+        decision_chain.append("🔄 **Fallback final**: Redirecionando para agente TI geral")
+        
         logger.info("🤖 TI processando com conhecimento geral")
         result = self.base_agent.processar_pergunta(query, user_profile)
         
-        attribution = f"\n\n📋 Resposta fornecida por: {self.base_agent.config.name} (TI Geral)"
+        # Montar transparência para fallback final
+        transparency_section = "\n\n" + "="*60 + "\n"
+        transparency_section += "🧠 **CADEIA DE DECISÃO E RACIOCÍNIO**\n"
+        transparency_section += "="*60 + "\n"
+        for step in decision_chain:
+            transparency_section += f"{step}\n"
         
-        return result + attribution
+        transparency_section += f"\n📋 **Resposta final fornecida por**: {self.base_agent.config.name} (TI Geral)"
+        transparency_section += "\n⚠️ **Motivo**: Especialistas não encontraram informações específicas"
+        transparency_section += "\n🎯 **Coordenado por**: Sistema TI Hierárquico"
+        transparency_section += "\n" + "="*60
+        
+        return result + transparency_section
     
     def get_hierarchy_stats(self) -> Dict:
         """Retorna estatísticas da hierarquia."""

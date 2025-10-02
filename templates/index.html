@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neoson - Sistema Multi-Agente de IA</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style_neoson.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </head>
 <body>
     <!-- Cabeçalho do Neoson -->
@@ -338,10 +342,16 @@
                         </div>
                         <div class="input-footer">
                             <div class="char-counter">0/1000</div>
-                            <button type="submit" id="sendBtn">
-                                <i class="fas fa-paper-plane"></i>
-                                Enviar
-                            </button>
+                            <div class="send-area">
+                                <div class="processing-indicator" id="processingIndicator">
+                                    <div class="spinner"></div>
+                                    <span class="processing-text" id="processingText">Processando...</span>
+                                </div>
+                                <button type="submit" id="sendBtn">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Enviar
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

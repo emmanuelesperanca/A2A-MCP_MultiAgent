@@ -12,6 +12,9 @@ import time
 
 import asyncio
 
+# Core configuration
+from core.config import config, print_config_summary
+
 # Importa o sistema Neoson
 from neoson import criar_neoson
 
@@ -165,8 +168,23 @@ def chat():
             print(f"🔍 Primeiros 100 chars: {resposta_texto[:100]}...")
             
             try:
+                # Separar resposta da cadeia de raciocínio se houver
+                resposta_completa = resultado['resposta']
+                cadeia_separador = "="*60
+                
+                if cadeia_separador in resposta_completa:
+                    # Tem cadeia de raciocínio
+                    partes = resposta_completa.split(cadeia_separador, 1)
+                    resposta_principal = partes[0].strip()
+                    cadeia_raciocinio = cadeia_separador + partes[1] if len(partes) > 1 else None
+                else:
+                    # Não tem cadeia de raciocínio
+                    resposta_principal = resposta_completa
+                    cadeia_raciocinio = None
+                
                 response_data = {
-                    'resposta': resultado['resposta'],
+                    'resposta': resposta_principal,
+                    'cadeia_raciocinio': cadeia_raciocinio,
                     'agent_usado': resultado['agente_usado'],
                     'especialidade': resultado.get('especialidade', ''),
                     'classificacao': resultado.get('classificacao', ''),

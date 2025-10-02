@@ -6,6 +6,21 @@ class NeosonInterface {
         this.isProcessing = false;
         this.currentDelegation = null;
         this.eyeTrackingEnabled = true;
+        this.currentStep = 0;
+        this.progressInterval = null;
+        
+        // Elementos para o indicador sutil de processamento
+        this.processingIndicator = null;
+        this.processingText = null;
+        this.sendBtn = null;
+        this.processingSteps = [
+            '🔍 Avaliando agentes disponíveis para resposta...',
+            '📊 Pesquisando na base de dados o melhor conteúdo...',
+            '🎯 Avaliando se a resposta está dentro das diretrizes...',
+            '🧠 Processando informações encontradas...',
+            '✅ Finalizando resposta personalizada...'
+        ];
+        
         this.init();
     }
 
@@ -15,6 +30,12 @@ class NeosonInterface {
         this.updateCharCounter();
         this.setupAgentMonitoring();
         this.startSubAgentMonitoring();
+        
+        // Inicializar elementos do indicador de processamento
+        this.processingIndicator = document.getElementById('processingIndicator');
+        this.processingText = document.getElementById('processingText');
+        this.sendBtn = document.getElementById('sendBtn');
+        
         console.log('🤖 Neoson System Interface Initialized');
         console.log('👥 Sub-agentes TI monitoramento iniciado');
     }
@@ -176,7 +197,9 @@ class NeosonInterface {
         this.currentDelegation = agentKey;
 
         const agentInfo = this.getAgentInfo(agentKey);
-        this.updateSystemStatus('loading', `Delegando para ${agentInfo.name}...`);
+        
+        // Mostrar indicador sutil de processamento
+        this.showSubtleProcessing();
 
         this.activateAgentCard(agentKey);
         this.showAgentResponseIndicator(agentInfo);
@@ -187,9 +210,98 @@ class NeosonInterface {
         }
 
         await this.delay(600);
+    }
 
-        this.isProcessing = false;
-        this.updateSystemStatus('ready', 'Sistema Pronto');
+    showSubtleProcessing() {
+        console.log('🔄 Iniciando indicador de processamento sutil...');
+        
+        // Re-obter elementos se necessário (caso não foram inicializados)
+        if (!this.processingIndicator) {
+            this.processingIndicator = document.getElementById('processingIndicator');
+        }
+        if (!this.processingText) {
+            this.processingText = document.getElementById('processingText');
+        }
+        if (!this.sendBtn) {
+            this.sendBtn = document.getElementById('sendBtn');
+        }
+        
+        if (!this.processingIndicator || !this.processingText || !this.sendBtn) {
+            console.error('❌ Elementos do indicador não encontrados');
+            return;
+        }
+        
+        // Marcar como processando
+        this.isProcessing = true;
+        
+        // Desabilitar botão e mostrar indicador
+        this.sendBtn.disabled = true;
+        this.processingIndicator.classList.add('active');
+        
+        console.log('✅ Botão desabilitado e indicador ativado');
+        
+        // Reset e configuração inicial
+        this.currentStep = 0;
+        
+        // Iniciar rotação das mensagens de processamento
+        this.startSubtleProgress();
+    }
+    
+    startSubtleProgress() {
+        if (!this.processingText) return;
+        
+        // Mostrar primeira mensagem
+        this.processingText.textContent = this.processingSteps[this.currentStep];
+        
+        // Configurar intervalo para trocar mensagens
+        this.progressInterval = setInterval(() => {
+            this.currentStep = (this.currentStep + 1) % this.processingSteps.length;
+            if (this.processingText) {
+                this.processingText.textContent = this.processingSteps[this.currentStep];
+            }
+        }, 2000); // Trocar a cada 2 segundos
+    }
+
+    startProgressSequence() {
+        const messages = [
+            "Avaliando agentes disponíveis para resposta",
+            "Pesquisando na base de dados o conteúdo para a melhor resposta", 
+            "Avaliando se a resposta se encontra dentro das diretrizes da empresa",
+            "Finalizando resposta"
+        ];
+
+        const icons = ["fas fa-users", "fas fa-database", "fas fa-shield-alt", "fas fa-check-circle"];
+        
+        const updateMessage = (step) => {
+            const titleEl = document.querySelector('.progress-title');
+            const subtitleEl = document.querySelector('.progress-subtitle');
+            const iconEl = document.querySelector('.progress-icon');
+            const progressEl = document.querySelector('.progress-ring__progress');
+            
+            if (titleEl && subtitleEl && iconEl && progressEl) {
+                titleEl.textContent = "Neoson está pensando";
+                subtitleEl.innerHTML = `${messages[step]}<span class="progress-dots"></span>`;
+                iconEl.className = `progress-icon ${icons[step]}`;
+                
+                // Atualizar progresso (25% por step)
+                const progress = ((step + 1) / messages.length) * 283;
+                const offset = 283 - progress;
+                progressEl.style.strokeDashoffset = offset;
+            }
+        };
+
+        // Iniciar sequência
+        updateMessage(0);
+        
+        // Atualizar a cada 1.5 segundos
+        this.progressInterval = setInterval(() => {
+            this.currentStep++;
+            if (this.currentStep < messages.length) {
+                updateMessage(this.currentStep);
+            } else {
+                clearInterval(this.progressInterval);
+            }
+        }, 1500);
     }
 
     async showHierarchicalDelegation() {
@@ -314,23 +426,36 @@ class NeosonInterface {
     }
 
     hideDelegationProcess() {
-        const overlay = document.querySelector('.processing-overlay');
-        if (overlay) {
-            overlay.classList.remove('show');
+        console.log('🔄 Ocultando indicador de processamento...');
+        
+        // Marcar como não processando
+        this.isProcessing = false;
+        
+        // Ocultar indicador sutil e habilitar botão
+        if (this.processingIndicator) {
+            this.processingIndicator.classList.remove('active');
+        }
+        
+        if (this.sendBtn) {
+            this.sendBtn.disabled = false;
         }
 
-        // Reset steps
-        document.querySelectorAll('.step').forEach(step => {
-            step.classList.remove('active', 'completed');
-        });
+        // Limpar intervalos de progresso
+        if (this.progressInterval) {
+            clearInterval(this.progressInterval);
+            this.progressInterval = null;
+        }
+        
+        console.log('✅ Indicador ocultado e botão habilitado');
 
-        // Hide handoff
+        // Hide handoff (manter funcionalidade existente)
         const handoff = document.querySelector('.agent-handoff');
         if (handoff) {
             handoff.classList.remove('show');
         }
 
         this.isProcessing = false;
+        this.currentStep = 0;
         this.updateSystemStatus('ready', 'Sistema Pronto');
     }
 
@@ -467,6 +592,9 @@ class NeosonInterface {
 
         if (!message) return;
 
+        // IMEDIATAMENTE mostrar indicador de processamento
+        this.showSubtleProcessing();
+
         // Clear input and show user message
         messageInput.value = '';
         this.updateCharCounter();
@@ -531,7 +659,7 @@ class NeosonInterface {
             }
 
             // Show response
-            this.addMessage(data.resposta, 'bot', data.agent_usado || 'neoson');
+            this.addMessage(data.resposta, 'bot', data.agent_usado || 'neoson', data.cadeia_raciocinio);
             this.showNeosonExpression('happy');
 
         } catch (error) {
@@ -550,10 +678,11 @@ class NeosonInterface {
             this.showNeosonExpression('surprised');
         } finally {
             this.stopThinking();
+            this.hideDelegationProcess();
         }
     }
 
-    addMessage(content, sender, agent = null) {
+    addMessage(content, sender, agent = null, cadeiaRaciocinio = null) {
         const messagesContainer = document.querySelector('.chat-messages');
         if (!messagesContainer) return;
 
@@ -574,6 +703,26 @@ class NeosonInterface {
         const avatar = sender === 'user' ? '👤' : (agentInfo ? agentInfo.icon : '🤖');
         const senderName = sender === 'user' ? 'Você' : (agentInfo ? agentInfo.name : 'Sistema');
 
+        // Gerar ID único para esta mensagem
+        const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+        // Botão de cadeia de raciocínio (apenas para respostas do bot com cadeia)
+        const cadeiaButton = (sender === 'bot' && cadeiaRaciocinio) 
+            ? `<button class="chain-button" onclick="neosonInterface.toggleChain('${messageId}')">
+                 <i class="fas fa-brain"></i> Ver Cadeia de Raciocínio
+               </button>` 
+            : '';
+
+        // Cadeia de raciocínio colapsada
+        const cadeiaSection = (sender === 'bot' && cadeiaRaciocinio)
+            ? `<div class="reasoning-chain collapsed" id="chain_${messageId}">
+                 <div class="chain-content">
+                   <h4><i class="fas fa-brain"></i> Cadeia de Decisão e Raciocínio</h4>
+                   <div class="chain-text">${this.formatChainContent(cadeiaRaciocinio)}</div>
+                 </div>
+               </div>`
+            : '';
+
         messageDiv.innerHTML = `
             <div class="message-avatar ${agent ? agentInfo.class : ''}">${avatar}</div>
             <div class="message-content">
@@ -582,23 +731,126 @@ class NeosonInterface {
                     ${agentBadge}
                     <span class="timestamp">${new Date().toLocaleTimeString()}</span>
                 </div>
-                <div class="message-text">${this.formatMessage(content)}</div>
+                <div class="message-text markdown-content" id="${messageId}_text">${this.formatMessage(content)}</div>
+                <div class="message-actions">
+                    <button class="copy-button" onclick="neosonInterface.copyMessage('${messageId}_text')">
+                        <i class="fas fa-copy"></i> Copiar
+                    </button>
+                    ${cadeiaButton}
+                </div>
+                ${cadeiaSection}
             </div>
         `;
 
         messagesContainer.appendChild(messageDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Aplicar formatação markdown
+        this.renderMarkdown(messageId + '_text');
     }
 
     formatMessage(content) {
-        // Convert URLs to links
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        content = content.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
-        
-        // Convert line breaks
-        content = content.replace(/\n/g, '<br>');
-        
+        // Para mensagens de usuário, apenas converter quebras de linha
+        if (!content.includes('**') && !content.includes('###') && !content.includes('```')) {
+            // Convert URLs to links
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            content = content.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
+            
+            // Convert line breaks
+            content = content.replace(/\n/g, '<br>');
+            
+            return content;
+        }
+
+        // Para mensagens com markdown, retornar como está para processamento posterior
         return content;
+    }
+
+    renderMarkdown(elementId) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        const content = element.textContent || element.innerText;
+        
+        try {
+            // Configurar marked para segurança
+            marked.setOptions({
+                breaks: true,
+                gfm: true,
+                sanitize: false, // Vamos permitir HTML para melhor formatação
+                smartLists: true,
+                smartypants: true
+            });
+
+            const htmlContent = marked.parse(content);
+            element.innerHTML = htmlContent;
+
+            // Aplicar syntax highlighting se houver código
+            if (element.querySelector('code')) {
+                Prism.highlightAllUnder(element);
+            }
+        } catch (error) {
+            console.error('Erro ao renderizar markdown:', error);
+            // Fallback para formatação simples
+            element.innerHTML = this.formatMessage(content);
+        }
+    }
+
+    formatChainContent(chainContent) {
+        if (!chainContent) return '';
+        
+        try {
+            // Processar a cadeia de raciocínio com markdown
+            const htmlContent = marked.parse(chainContent);
+            return htmlContent;
+        } catch (error) {
+            console.error('Erro ao formatar cadeia:', error);
+            return chainContent.replace(/\n/g, '<br>');
+        }
+    }
+
+    toggleChain(messageId) {
+        const chainElement = document.getElementById(`chain_${messageId}`);
+        const button = document.querySelector(`[onclick="neosonInterface.toggleChain('${messageId}')"]`);
+        
+        if (!chainElement || !button) return;
+
+        chainElement.classList.toggle('collapsed');
+        
+        const isCollapsed = chainElement.classList.contains('collapsed');
+        const icon = button.querySelector('i');
+        const text = button.childNodes[1]; // Nó de texto após o ícone
+        
+        if (isCollapsed) {
+            icon.className = 'fas fa-brain';
+            text.textContent = ' Ver Cadeia de Raciocínio';
+        } else {
+            icon.className = 'fas fa-eye-slash';
+            text.textContent = ' Ocultar Cadeia de Raciocínio';
+        }
+    }
+
+    copyMessage(elementId) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        // Obter o texto markdown original ou o texto processado
+        const textToCopy = element.textContent || element.innerText;
+        
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            // Feedback visual
+            const button = event.target.closest('.copy-button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+            button.classList.add('copied');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('Erro ao copiar:', err);
+        });
     }
 
     async clearMemory() {
@@ -1052,6 +1304,7 @@ document.addEventListener('keydown', function(e) {
 // Initialize system when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     window.neoson = new NeosonInterface();
+    window.neosonInterface = window.neoson; // Para compatibilidade com os novos métodos
     
     // Handle responsive changes
     window.addEventListener('resize', () => {

@@ -2,18 +2,54 @@
 
 from __future__ import annotations
 
-import os
 import warnings
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
-from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
-from postgres_vector_store import PostgresVectorStore
+from core.config import get_database_url
+from dal import get_knowledge_dal, BaseDAL
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
+
+
+class Document:
+    """Classe Document compatível que funciona como dicionário e objeto."""
+    
+    def __init__(self, page_content: str = "", metadata: Dict = None):
+        self.page_content = page_content
+        self.metadata = metadata or {}
+        # Adicionar todos os campos do metadata como atributos do objeto
+        for key, value in self.metadata.items():
+            setattr(self, key, value)
+    
+    def get(self, key: str, default=None):
+        """Método get compatível com dicionário."""
+        if key == 'page_content':
+            return self.page_content
+        elif key in self.metadata:
+            return self.metadata[key]
+        elif hasattr(self, key):
+            return getattr(self, key)
+        else:
+            return default
+    
+    def items(self):
+        """Método items compatível com dicionário."""
+        result = {'page_content': self.page_content}
+        result.update(self.metadata)
+        return result.items()
+    
+    def __getitem__(self, key):
+        """Permite acesso como doc['key']."""
+        if key == 'page_content':
+            return self.page_content
+        elif key in self.metadata:
+            return self.metadata[key]
+        else:
+            raise KeyError(f"Key '{key}' not found")
 
 
 @dataclass
@@ -75,7 +111,7 @@ class BaseSubagent:
         self.config = config
         self.llm: Optional[ChatOpenAI] = None
         self.embeddings: Optional[OpenAIEmbeddings] = None
-        self.vector_store: Optional[PostgresVectorStore] = None
+        self.dal: Optional[BaseDAL] = None
         self.memoria_conversas: Dict[str, List[Dict[str, Any]]] = {}
         self.db_dsn: Optional[str] = None
         self.table_name: str = config.table_name
@@ -100,43 +136,92 @@ class BaseSubagent:
     # ------------------------------------------------------------------
     def carregar_configuracoes_e_dados(self) -> str:
         self._log(f"--- 🔄 Carregando configurações do agente {self.config.name}... ---")
-        load_dotenv()
-
-        api_key = os.getenv("OPENAI_API_KEY")
+        
+        # Use centralized configuration
+        from core.config import config as app_config
+        
+        # Get OpenAI API key
+        api_key = app_config.openai.api_key
         if not api_key:
-            raise ValueError("Chave da API OPENAI_API_KEY não encontrada nas variáveis de ambiente")
+            raise ValueError("Chave da API OPENAI_API_KEY não encontrada nas configurações")
 
-        db_env = self.config.database_env_var
-        table_env = self.config.table_env_var
-
-        self.db_dsn = os.getenv(db_env or "DATABASE_URL") or os.getenv("DATABASE_URL")
+        # Determine database domain based on agent type
+        domain_mapping = {
+            "knowledge_hr": "rh",
+            "knowledge_rh": "rh",
+            "knowledge_TECH": "ti",
+            "knowledge_tech": "ti",
+            "knowledge_IT GOVERNANCE & DELIVERY METHODS": "governance",
+            "knowledge_IT INFRASTRUCTURE & CLOUD": "infra",
+            "knowledge_SOFTWARE DEVELOPMENT": "dev",
+            "knowledge_ARCHITETURE & DEV": "dev",
+            "knowledge_IT END-USER SERVICES": "enduser",
+            "knowledge_END-USER": "enduser"
+        }
+        
+        # Find domain based on table name
+        domain = "main"
+        for table_pattern, domain_name in domain_mapping.items():
+            if table_pattern in self.config.table_name:
+                domain = domain_name
+                break
+        
+        # Get database configuration for this domain
+        db_config = app_config.get_database_config(domain)
+        self.db_dsn = db_config["url"]
+        self.table_name = db_config["table"]
+        
         if not self.db_dsn:
-            raise ValueError(
-                f"Variável de ambiente DATABASE_URL ou {db_env} não configurada para o agente {self.config.identifier}."
-            )
-
-        self.table_name = os.getenv(table_env, self.config.table_name)
-        self._log(f"✅ Fonte de conhecimento configurada: tabela '{self.table_name}'.")
+            raise ValueError(f"Database URL não configurada para o domínio {domain}")
+        
+        self._log(f"✅ Fonte de conhecimento configurada: tabela '{self.table_name}' (domínio: {domain})")
         return api_key
 
     def inicializar_modelos(self, api_key: str) -> None:
+        from core.config import config as app_config
+        
         self._log(f"--- 🤖 Inicializando modelos OpenAI para {self.config.specialty}... ---")
         self.llm = ChatOpenAI(
             api_key=api_key,
-            model=self.config.llm_model,
-            temperature=self.config.llm_temperature,
-            max_tokens=self.config.llm_max_tokens,
+            model=app_config.openai.chat_model,
+            temperature=app_config.openai.temperature,
+            max_tokens=app_config.openai.max_tokens,
         )
-        self.embeddings = OpenAIEmbeddings(api_key=api_key, model=self.config.embedding_model)
+        self.embeddings = OpenAIEmbeddings(api_key=api_key, model=app_config.openai.embedding_model)
         self._log("✅ Modelos OpenAI inicializados.")
 
     def configurar_vector_store(self) -> None:
         if not self.db_dsn:
             raise RuntimeError("Banco de dados não configurado. Execute carregar_configuracoes_e_dados primeiro.")
 
+        # Configurar acesso ao banco de dados via DAL
         self._log(f"--- 🗄️ Conectando à base vetorial '{self.table_name}'... ---")
-        self.vector_store = PostgresVectorStore(self.table_name, dsn=self.db_dsn, min_connections=1, max_connections=5)
-        self._log("✅ Conexão com a base de conhecimento estabelecida.")
+        
+        # Detectar tipo de base de conhecimento pelo nome da tabela
+        table_suffix = self._detect_table_suffix()
+        self._log(f"🔍 Tabela: '{self.table_name}' -> Sufixo detectado: '{table_suffix}'")
+        self.dal = get_knowledge_dal(table_suffix)
+        
+        # Conectar ao banco
+        if not self.dal.connect():
+            raise RuntimeError(f"Falha ao conectar à base de conhecimento {self.table_name}")
+        
+        self._log("✅ Conexão com a base de conhecimento estabelecida via DAL.")
+
+    def _detect_table_suffix(self) -> str:
+        """Detecta o sufixo da tabela para determinar qual DAL usar."""
+        table_lower = self.table_name.lower()
+        
+        if 'rh' in table_lower:
+            return 'rh'
+        elif any(term in table_lower for term in ['governance', 'delivery']):
+            return 'governance'
+        elif 'infra' in table_lower:
+            return 'infra'
+        elif any(term in table_lower for term in ['ti', 'tech', 'development']):
+            return 'ti'
+        else:
+            return 'main'
 
     def configurar_mcp_tools(self) -> None:
         """Configura o cliente MCP e carrega as tools disponíveis."""
@@ -283,13 +368,20 @@ class BaseSubagent:
         # 1. Busca com a pergunta original
         consulta_embedding = self.embeddings.embed_query(pergunta)
         self._log(f"📊 Embedding gerado, consultando tabela '{self.table_name}'...")
-        candidatos_originais = self.vector_store.similarity_search(consulta_embedding, limit=30)
-        
-        # Adicionar candidatos únicos baseado no ID ou conteúdo
-        for candidato in candidatos_originais:
-            id_unico = candidato.get("id", str(hash(candidato.get("conteudo_original", ""))))
+        # Buscar candidatos usando a consulta na língua original
+        search_results = self.dal.search_vectors(
+            table_name=self.table_name, 
+            query_vector=consulta_embedding, 
+            limit=30
+        )
+        # Converter resultados para dicionários
+        for r in search_results.documents:
+            # r já é um dicionário vindo da DAL
+            doc_dict = r if isinstance(r, dict) else dict(r)
+            doc_id = doc_dict.get("id")
+            id_unico = doc_id or str(hash(doc_dict.get("conteudo_original", "")))
             if id_unico not in candidatos_unicos:
-                candidatos_unicos[id_unico] = candidato
+                candidatos_unicos[id_unico] = doc_dict
         
         # 2. Dicionários de tradução para busca multilíngue
         termos_pt_en = {
@@ -340,12 +432,19 @@ class BaseSubagent:
         if pergunta_traduzida != pergunta_lower:
             self._log(f"🌐 Fazendo busca adicional com: '{pergunta_traduzida}'")
             consulta_embedding_trad = self.embeddings.embed_query(pergunta_traduzida)
-            candidatos_traduzidos = self.vector_store.similarity_search(consulta_embedding_trad, limit=30)
-            
-            for candidato in candidatos_traduzidos:
-                id_unico = candidato.get("id", str(hash(candidato.get("conteudo_original", ""))))
+            # Buscar candidatos traduzindo a consulta para inglês
+            search_results_trad = self.dal.search_vectors(
+                table_name=self.table_name,
+                query_vector=consulta_embedding_trad,
+                limit=30
+            )
+            # Adicionar candidatos da busca traduzida
+            for r in search_results_trad.documents:
+                doc_dict = r if isinstance(r, dict) else dict(r)
+                doc_id = doc_dict.get("id")
+                id_unico = doc_id or str(hash(doc_dict.get("conteudo_original", "")))
                 if id_unico not in candidatos_unicos:
-                    candidatos_unicos[id_unico] = candidato
+                    candidatos_unicos[id_unico] = doc_dict
         
         # 4. Busca adicional por termos-chave específicos para governança
         if any(termo in pergunta_lower for termo in ["governance", "governança", "policy", "política", "signature", "assinatura"]):
@@ -359,12 +458,18 @@ class BaseSubagent:
             
             for termo in termos_governanca:
                 consulta_embedding_gov = self.embeddings.embed_query(termo)
-                candidatos_gov = self.vector_store.similarity_search(consulta_embedding_gov, limit=10)
-                
-                for candidato in candidatos_gov:
-                    id_unico = candidato.get("id", str(hash(candidato.get("conteudo_original", ""))))
+                search_results_gov = self.dal.search_vectors(
+                    table_name=self.table_name,
+                    query_vector=consulta_embedding_gov,
+                    limit=10
+                )
+                # Adicionar candidatos da busca de governança
+                for r in search_results_gov.documents:
+                    doc_dict = r if isinstance(r, dict) else dict(r)
+                    doc_id = doc_dict.get("id")
+                    id_unico = doc_id or str(hash(doc_dict.get("conteudo_original", "")))
                     if id_unico not in candidatos_unicos:
-                        candidatos_unicos[id_unico] = candidato
+                        candidatos_unicos[id_unico] = doc_dict
         
         candidatos_finais = list(candidatos_unicos.values())
         self._log(f"🌐 Busca multilíngue: {len(candidatos_finais)} documentos únicos encontrados")
@@ -384,12 +489,14 @@ class BaseSubagent:
         docs_outros = []          # Demais documentos
         
         for doc in documentos:
-            fonte = doc.get("fonte_documento", "").upper()
+            # Acessar fonte do documento através do metadata
+            fonte = doc.metadata.get("fonte_documento", "") if hasattr(doc, 'metadata') and doc.metadata else ""
+            fonte = fonte.upper()
             
             # Identificar documentos internacionais (em inglês ou normas internacionais)
             if any(termo in fonte for termo in ["FDA", "CFR", "ISO/IEC", "INTERNATIONAL", "STANDARD"]):
                 docs_internacionais.append(doc)
-            # Identificar documentos nacionais brasileiros  
+            # Identificar documentos nacionais brasileiros 
             elif any(termo in fonte for termo in ["ABNT", "RDC", "ANVISA", "NBR", "BRASIL"]):
                 docs_nacionais_br.append(doc)
             else:
@@ -403,17 +510,19 @@ class BaseSubagent:
         # 1. Sempre tentar incluir pelo menos 1 documento internacional (se houver)
         if docs_internacionais and len(selecionados) < max_docs:
             selecionados.append(docs_internacionais[0])
-            self._log(f"📄 Selecionado internacional: {docs_internacionais[0].get('fonte_documento', 'sem nome')}")
+            fonte_nome = docs_internacionais[0].metadata.get('fonte_documento', 'sem nome') if hasattr(docs_internacionais[0], 'metadata') and docs_internacionais[0].metadata else 'sem nome'
+            self._log(f"📄 Selecionado internacional: {fonte_nome}")
         
-        # 2. Sempre tentar incluir pelo menos 1 documento nacional BR (se houver) 
+        # 2. Sempre tentar incluir pelo menos 1 documento nacional BR (se houver)
         if docs_nacionais_br and len(selecionados) < max_docs:
             selecionados.append(docs_nacionais_br[0])
-            self._log(f"📄 Selecionado nacional BR: {docs_nacionais_br[0].get('fonte_documento', 'sem nome')}")
+            fonte_nome = docs_nacionais_br[0].metadata.get('fonte_documento', 'sem nome') if hasattr(docs_nacionais_br[0], 'metadata') and docs_nacionais_br[0].metadata else 'sem nome'
+            self._log(f"📄 Selecionado nacional BR: {fonte_nome}")
         
         # 3. Preencher slots restantes alternando entre categorias
         categorias_restantes = [
             (docs_internacionais[1:], "internacional"),
-            (docs_nacionais_br[1:], "nacional BR"), 
+            (docs_nacionais_br[1:], "nacional BR"),
             (docs_outros, "outros")
         ]
         
@@ -427,7 +536,8 @@ class BaseSubagent:
                 if docs_categoria:
                     doc_selecionado = docs_categoria.pop(0)
                     selecionados.append(doc_selecionado)
-                    self._log(f"📄 Selecionado {nome_categoria}: {doc_selecionado.get('fonte_documento', 'sem nome')}")
+                    fonte_nome = doc_selecionado.metadata.get('fonte_documento', 'sem nome') if hasattr(doc_selecionado, 'metadata') and doc_selecionado.metadata else 'sem nome'
+                    self._log(f"📄 Selecionado {nome_categoria}: {fonte_nome}")
                     break
                     
                 categoria_idx = (categoria_idx + 1) % len(categorias_restantes)
@@ -865,11 +975,25 @@ class BaseSubagent:
             return f"Nenhum documento específico encontrado na base de conhecimento de {especialidade}."
 
         partes: List[str] = []
-        for registro in documentos:
+        for i, registro in enumerate(documentos):
             fonte = registro.get("fonte_documento") or "Documento interno"
             doc_id = registro.get("id", "N/A")
             conteudo = (registro.get("conteudo_original") or "").strip()
-            partes.append(f"📄 {fonte} (ID: {doc_id}):\n{conteudo}")
+            
+            # Debug do conteúdo
+            print(f"🔍 Debug doc {i+1}: fonte='{fonte}', id='{doc_id}', conteudo_len={len(conteudo)}")
+            if not conteudo:
+                print(f"⚠️ Documento {i+1} sem conteúdo! Keys disponíveis: {list(registro.keys())}")
+                # Tentar outros campos de conteúdo
+                conteudo = (registro.get("conteudo") or registro.get("texto") or registro.get("content") or "").strip()
+                if conteudo:
+                    print(f"✅ Conteúdo encontrado em campo alternativo: {len(conteudo)} chars")
+            
+            if conteudo:
+                partes.append(f"📄 {fonte} (ID: {doc_id}):\n{conteudo}")
+            else:
+                partes.append(f"📄 {fonte} (ID: {doc_id}):\n[Documento sem conteúdo legível]")
+                
         return "\n\n".join(partes)
 
     @staticmethod
@@ -892,11 +1016,57 @@ class BaseSubagent:
             fontes.append(chave)
         return fontes
 
+    def _is_response_generic(self, response: str) -> bool:
+        """Verifica se a resposta é genérica e não usa documentos específicos da base."""
+        response_lower = response.lower()
+        
+        # Padrões que indicam claramente que não há informação na base
+        no_info_patterns = [
+            "não tenho essa informação específica",
+            "não localizei informações específicas", 
+            "não encontrei essa informação",
+            "não possuo informações específicas",
+            "recomendo abrir um ticket",
+            "entre em contato com",
+            "não consta em nossa base",
+            "informação não disponível",
+            "não há dados disponíveis sobre",
+            "desculpe, mas não encontrei"
+        ]
+        
+        # Padrões para respostas de conhecimento geral (definições, conceitos)
+        general_knowledge_patterns = [
+            "é uma palavra",
+            "é um termo que",
+            "é uma ferramenta",
+            "pode se referir a",
+            "em um contexto técnico",
+            "no campo da tecnologia", 
+            "se você estiver se referindo a algo mais específico",
+            "por favor, me avise",
+            "estou aqui para ajudar",
+            "é usada para",
+            "também pode se referir a",
+            "significa",
+            "biblioteca para python"
+        ]
+        
+        # Se tem padrões de "sem informação", definitivamente genérica
+        no_info_count = sum(1 for pattern in no_info_patterns if pattern in response_lower)
+        if no_info_count > 0:
+            return True
+        
+        # Se tem muitos padrões de conhecimento geral, também é genérica
+        general_count = sum(1 for pattern in general_knowledge_patterns if pattern in response_lower)
+        
+        # Se tem 2 ou mais padrões de conhecimento geral, considerar genérica
+        return general_count >= 2
+
     # ------------------------------------------------------------------
     # Fluxo principal
     # ------------------------------------------------------------------
     def processar_pergunta(self, pergunta: str, perfil_usuario: Dict[str, Any]) -> str:
-        if not self.llm or not self.embeddings or not self.vector_store:
+        if not self.llm or not self.embeddings or not self.dal:
             raise RuntimeError("Subagente não inicializado corretamente.")
 
         nome_usuario = self._perfil_val(perfil_usuario, "nome", "Nome") or "usuário"
@@ -985,6 +1155,13 @@ class BaseSubagent:
 
             historico_formatado = self.obter_historico_formatado(usuario_id)
             contexto = self._formatar_contexto(docs_selecionados, especialidade=self.config.specialty)
+            
+            # Debug do contexto
+            self._log(f"📝 Contexto formatado: {len(contexto)} caracteres")
+            if contexto:
+                self._log(f"🔍 Primeiros 200 chars do contexto: '{contexto[:200]}...'")
+            else:
+                self._log("⚠️ Contexto vazio!")
 
             contexto_personalizado = f"""
 INFORMAÇÕES DO FUNCIONÁRIO:
@@ -1008,12 +1185,17 @@ INFORMAÇÕES DISPONÍVEIS:
             resposta_raw = self.llm.invoke(prompt_formatado)
             resposta_final = resposta_raw.content if hasattr(resposta_raw, "content") else str(resposta_raw)
 
+            # Verificar se a resposta é genérica (não usa documentos específicos)
+            is_generic_response = self._is_response_generic(resposta_final)
+            
             fontes_consultadas = self._coletar_fontes(docs_selecionados)
-            if fontes_consultadas:
+            
+            # Só adicionar fontes se a resposta NÃO for genérica e houver documentos relevantes
+            if not is_generic_response and fontes_consultadas:
                 self.last_sources_used.extend(fontes_consultadas)
             
-            # Adicionar informações de fontes e colaboração
-            if self.last_sources_used:
+            # Adicionar informações de fontes apenas se realmente utilizadas
+            if self.last_sources_used and not is_generic_response:
                 lista_fontes = "\n".join(f"- {fonte}" for fonte in set(self.last_sources_used))
                 resposta_final = f"{resposta_final}\n\nFontes consultadas:\n{lista_fontes}"
             
@@ -1061,7 +1243,7 @@ INFORMAÇÕES DISPONÍVEIS:
             "especialidade": self.config.specialty,
             "descricao": self.config.description,
             "keywords": self.config.keywords,
-            "pronto": self.vector_store is not None,
+            "pronto": self.dal is not None,
         }
 
 
