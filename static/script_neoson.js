@@ -21,6 +21,13 @@ class NeosonInterface {
             '✅ Finalizando resposta personalizada...'
         ];
         
+        // Sistema de Feedback
+        this.feedbackContext = {}; // Armazena contexto das mensagens para feedback
+        this.currentUserId = 'user_' + Date.now(); // ID único do usuário
+        this.currentFeedbackId = null;
+        this.currentRating = null;
+        this.lastUserQuestion = null; // Armazena última pergunta do usuário
+        
         this.init();
     }
 
@@ -592,6 +599,9 @@ class NeosonInterface {
 
         if (!message) return;
 
+        // Armazenar última pergunta do usuário para o feedback
+        this.lastUserQuestion = message;
+
         // IMEDIATAMENTE mostrar indicador de processamento
         this.showSubtleProcessing();
 
@@ -659,7 +669,7 @@ class NeosonInterface {
             }
 
             // Show response
-            this.addMessage(data.resposta, 'bot', data.agent_usado || 'neoson', data.cadeia_raciocinio);
+            this.addMessage(data.resposta, 'bot', data.agent_usado || 'neoson', data.cadeia_raciocinio, data.enriched || null);
             this.showNeosonExpression('happy');
 
         } catch (error) {
@@ -682,7 +692,7 @@ class NeosonInterface {
         }
     }
 
-    addMessage(content, sender, agent = null, cadeiaRaciocinio = null) {
+    addMessage(content, sender, agent = null, cadeiaRaciocinio = null, enrichedData = null) {
         const messagesContainer = document.querySelector('.chat-messages');
         if (!messagesContainer) return;
 
@@ -723,6 +733,25 @@ class NeosonInterface {
                </div>`
             : '';
 
+        // NOVO: Seções enriquecidas (documentos, FAQs, contatos, sugestões, glossário)
+        const enrichedSections = (sender === 'bot' && enrichedData) 
+            ? this.renderEnrichedSections(enrichedData, messageId)
+            : '';
+
+        // Botões de feedback (apenas para respostas do bot que não são erro)
+        const feedbackButtons = (sender === 'bot' && agent !== 'error')
+            ? `<div class="feedback-buttons" data-response-id="${messageId}">
+                 <button class="feedback-btn feedback-positive" onclick="neosonInterface.submitFeedback(5, '${messageId}', event)">
+                   <i class="fas fa-thumbs-up"></i>
+                   <span>Útil</span>
+                 </button>
+                 <button class="feedback-btn feedback-negative" onclick="neosonInterface.submitFeedback(1, '${messageId}', event)">
+                   <i class="fas fa-thumbs-down"></i>
+                   <span>Não Útil</span>
+                 </button>
+               </div>`
+            : '';
+
         messageDiv.innerHTML = `
             <div class="message-avatar ${agent ? agentInfo.class : ''}">${avatar}</div>
             <div class="message-content">
@@ -739,6 +768,8 @@ class NeosonInterface {
                     ${cadeiaButton}
                 </div>
                 ${cadeiaSection}
+                ${enrichedSections}
+                ${feedbackButtons}
             </div>
         `;
 
@@ -747,6 +778,165 @@ class NeosonInterface {
 
         // Aplicar formatação markdown
         this.renderMarkdown(messageId + '_text');
+        
+        // Armazenar contexto da mensagem para feedback
+        if (sender === 'bot' && agent !== 'error') {
+            this.storeMessageContext(messageId, content, agent);
+        }
+    }
+
+    renderEnrichedSections(enrichedData, messageId) {
+        if (!enrichedData) return '';
+        
+        let html = '<div class="enriched-sections">';
+        
+        // 1. Documentos Relacionados
+        if (enrichedData.documentos_relacionados && enrichedData.documentos_relacionados.length > 0) {
+            html += `
+                <div class="enriched-section">
+                    <button class="enriched-header" onclick="neosonInterface.toggleEnrichedSection('docs_${messageId}')">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Documentos Relacionados (${enrichedData.documentos_relacionados.length})</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
+                    <div class="enriched-content collapsed" id="docs_${messageId}">
+                        ${enrichedData.documentos_relacionados.map(doc => `
+                            <div class="doc-card">
+                                <div class="doc-title">${doc.titulo}</div>
+                                <div class="doc-preview">${doc.preview}</div>
+                                <div class="doc-relevance">
+                                    <span class="relevance-badge">${doc.relevancia}% relevante</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 2. FAQs Similares
+        if (enrichedData.faqs_similares && enrichedData.faqs_similares.length > 0) {
+            html += `
+                <div class="enriched-section">
+                    <button class="enriched-header" onclick="neosonInterface.toggleEnrichedSection('faqs_${messageId}')">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Perguntas Similares (${enrichedData.faqs_similares.length})</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
+                    <div class="enriched-content collapsed" id="faqs_${messageId}">
+                        ${enrichedData.faqs_similares.map(faq => `
+                            <div class="faq-card">
+                                <div class="faq-question"><strong>P:</strong> ${faq.pergunta}</div>
+                                <div class="faq-answer"><strong>R:</strong> ${faq.resposta}</div>
+                                <div class="faq-meta">
+                                    <span class="rating-badge">⭐ ${faq.rating}</span>
+                                    <span class="similarity-badge">${faq.similaridade}% similar</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 3. Contatos de Especialistas
+        if (enrichedData.especialistas_contato && enrichedData.especialistas_contato.length > 0) {
+            html += `
+                <div class="enriched-section">
+                    <button class="enriched-header" onclick="neosonInterface.toggleEnrichedSection('contacts_${messageId}')">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Especialistas para Contato (${enrichedData.especialistas_contato.length})</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
+                    <div class="enriched-content collapsed" id="contacts_${messageId}">
+                        ${enrichedData.especialistas_contato.map(contact => `
+                            <div class="contact-card">
+                                <div class="contact-name">${contact.nome}</div>
+                                <div class="contact-info">
+                                    <span><i class="fas fa-envelope"></i> ${contact.email}</span>
+                                    <span><i class="fas fa-phone"></i> ${contact.telefone}</span>
+                                </div>
+                                <div class="contact-specialties">
+                                    ${contact.especialidades.map(esp => `<span class="specialty-tag">${esp}</span>`).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 4. Sugestões de Próximas Perguntas
+        if (enrichedData.proximas_sugestoes && enrichedData.proximas_sugestoes.length > 0) {
+            html += `
+                <div class="enriched-section">
+                    <button class="enriched-header" onclick="neosonInterface.toggleEnrichedSection('suggestions_${messageId}')">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Você também pode perguntar (${enrichedData.proximas_sugestoes.length})</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
+                    <div class="enriched-content collapsed" id="suggestions_${messageId}">
+                        <div class="suggestions-list">
+                            ${enrichedData.proximas_sugestoes.map(suggestion => `
+                                <button class="suggestion-button" onclick="neosonInterface.askSuggestion('${suggestion.replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-arrow-right"></i>
+                                    ${suggestion}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 5. Glossário de Termos
+        if (enrichedData.glossario && Object.keys(enrichedData.glossario).length > 0) {
+            html += `
+                <div class="enriched-section">
+                    <button class="enriched-header" onclick="neosonInterface.toggleEnrichedSection('glossary_${messageId}')">
+                        <i class="fas fa-book"></i>
+                        <span>Glossário de Termos (${Object.keys(enrichedData.glossario).length})</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
+                    <div class="enriched-content collapsed" id="glossary_${messageId}">
+                        <div class="glossary-list">
+                            ${Object.entries(enrichedData.glossario).map(([termo, definicao]) => `
+                                <div class="glossary-term">
+                                    <div class="term-name">${termo}</div>
+                                    <div class="term-definition">${definicao}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+
+    toggleEnrichedSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        const header = section.previousElementSibling;
+        
+        if (section.classList.contains('collapsed')) {
+            section.classList.remove('collapsed');
+            header.querySelector('.toggle-icon').style.transform = 'rotate(180deg)';
+        } else {
+            section.classList.add('collapsed');
+            header.querySelector('.toggle-icon').style.transform = 'rotate(0deg)';
+        }
+    }
+
+    askSuggestion(suggestion) {
+        // Preencher o campo de mensagem com a sugestão
+        const messageInput = document.getElementById('mensagem');
+        if (messageInput) {
+            messageInput.value = suggestion;
+            messageInput.focus();
+            this.updateCharCounter();
+        }
     }
 
     formatMessage(content) {
@@ -1261,6 +1451,300 @@ class NeosonInterface {
         } else {
             this.eyeTrackingEnabled = true;
         }
+    }
+
+    // ===== SISTEMA DE FEEDBACK =====
+    
+    /**
+     * Armazena contexto da mensagem para posterior envio de feedback
+     */
+    storeMessageContext(messageId, responseText, agentName) {
+        this.feedbackContext[messageId] = {
+            question: this.lastUserQuestion,
+            response: responseText,
+            agent: agentName,
+            timestamp: new Date().toISOString(),
+            classification: this.getAgentClassification(agentName)
+        };
+        
+        console.log(`💾 Contexto armazenado para ${messageId}:`, this.feedbackContext[messageId]);
+    }
+    
+    /**
+     * Obtém classificação do agente
+     */
+    getAgentClassification(agentName) {
+        const classifications = {
+            'ana': 'rh',
+            'Coordenador TI': 'ti',
+            'alex': 'ti',
+            'Ariel': 'ti_governance',
+            'Alice': 'ti_infrastructure',
+            'Carlos': 'ti_development',
+            'Marina': 'ti_enduser',
+            'neoson': 'geral'
+        };
+        
+        return classifications[agentName] || 'outro';
+    }
+    
+    /**
+     * Submete feedback do usuário
+     */
+    async submitFeedback(rating, responseId, event) {
+        // Prevenir clique múltiplo
+        const button = event.target.closest('.feedback-btn');
+        if (button.disabled) return;
+        
+        console.log(`👍👎 Feedback ${rating} para resposta ${responseId}`);
+        
+        this.currentFeedbackId = responseId;
+        this.currentRating = rating;
+        
+        // Desabilitar todos os botões de feedback desta mensagem
+        const buttonsContainer = document.querySelector(`.feedback-buttons[data-response-id="${responseId}"]`);
+        if (buttonsContainer) {
+            const allButtons = buttonsContainer.querySelectorAll('.feedback-btn');
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            });
+        }
+        
+        // Marcar botão clicado visualmente
+        button.classList.add('selected');
+        
+        // Se positivo, enviar direto
+        if (rating === 5) {
+            await this.sendFeedbackToAPI(rating, responseId, null);
+            this.showThankYouToast('Obrigado pelo feedback positivo! 👍');
+        } else {
+            // Se negativo, abrir modal para comentário
+            this.openFeedbackModal();
+        }
+    }
+    
+    /**
+     * Abre modal de feedback
+     */
+    openFeedbackModal() {
+        let modal = document.getElementById('feedbackModal');
+        
+        // Criar modal se não existir
+        if (!modal) {
+            modal = this.createFeedbackModal();
+            document.body.appendChild(modal);
+        }
+        
+        modal.style.display = 'flex'; // Usar flex para centralizar
+        const textarea = document.getElementById('feedbackComment');
+        if (textarea) {
+            textarea.value = '';
+            textarea.focus();
+            document.getElementById('charCount').textContent = '0';
+        }
+    }
+    
+    /**
+     * Cria modal de feedback
+     */
+    createFeedbackModal() {
+        const modal = document.createElement('div');
+        modal.id = 'feedbackModal';
+        modal.className = 'modal feedback-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-comment-dots"></i> Obrigado pelo feedback!</h3>
+                    <button class="modal-close" onclick="neosonInterface.closeFeedbackModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Quer nos contar mais sobre sua experiência? (opcional)</p>
+                    <textarea id="feedbackComment" 
+                              placeholder="Como podemos melhorar esta resposta?"
+                              maxlength="2000"
+                              rows="4"></textarea>
+                    <div class="char-counter-feedback">
+                        <span id="charCount">0</span>/2000 caracteres
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="neosonInterface.closeFeedbackModal()">
+                        Pular
+                    </button>
+                    <button class="btn-primary" onclick="neosonInterface.submitComment()">
+                        <i class="fas fa-paper-plane"></i>
+                        Enviar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Adicionar event listener para contador de caracteres
+        setTimeout(() => {
+            const textarea = document.getElementById('feedbackComment');
+            const charCount = document.getElementById('charCount');
+            
+            if (textarea && charCount) {
+                textarea.addEventListener('input', () => {
+                    const count = textarea.value.length;
+                    charCount.textContent = count;
+                    
+                    if (count > 1900) {
+                        charCount.style.color = '#f44336';
+                    } else {
+                        charCount.style.color = '#999';
+                    }
+                });
+            }
+        }, 100);
+        
+        // Fechar modal ao clicar fora
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeFeedbackModal();
+            }
+        });
+        
+        return modal;
+    }
+    
+    /**
+     * Fecha modal de feedback
+     */
+    closeFeedbackModal() {
+        const modal = document.getElementById('feedbackModal');
+        if (!modal) return;
+        
+        modal.style.display = 'none';
+        
+        // Se já selecionou rating negativo mas não enviou comentário, enviar sem comentário
+        if (this.currentFeedbackId && this.currentRating === 1) {
+            this.sendFeedbackToAPI(this.currentRating, this.currentFeedbackId, null);
+            this.showThankYouToast('Obrigado pelo seu feedback! Vamos melhorar! 💪');
+            
+            // Limpar estado
+            this.currentFeedbackId = null;
+            this.currentRating = null;
+        }
+    }
+    
+    /**
+     * Submete comentário do modal
+     */
+    async submitComment() {
+        const comment = document.getElementById('feedbackComment').value.trim();
+        
+        await this.sendFeedbackToAPI(this.currentRating, this.currentFeedbackId, comment || null);
+        
+        this.closeFeedbackModal();
+        this.showThankYouToast('Obrigado pelo seu feedback detalhado! Vamos melhorar! 💪');
+        
+        // Limpar estado
+        this.currentFeedbackId = null;
+        this.currentRating = null;
+    }
+    
+    /**
+     * Envia feedback para API
+     */
+    async sendFeedbackToAPI(rating, feedbackId, comment) {
+        const context = this.feedbackContext[feedbackId];
+        
+        if (!context) {
+            console.error('❌ Contexto não encontrado para', feedbackId);
+            return;
+        }
+        
+        try {
+            console.log('📤 Enviando feedback para API...');
+            
+            const requestBody = {
+                usuario_id: this.currentUserId,
+                feedback_id: feedbackId,
+                pergunta: context.question || '',
+                resposta: context.response || '',
+                agente: context.agent || 'desconhecido',
+                classificacao: context.classification || 'outro',
+                rating: rating,
+                comentario: comment,
+                tempo_resposta_ms: 0, // Pode ser calculado se necessário
+                contexto: {
+                    persona: this.selectedPersona,
+                    timestamp: context.timestamp
+                }
+            };
+            
+            console.log('📦 Request body:', requestBody);
+            
+            const response = await fetch('/api/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ erro: 'Erro desconhecido' }));
+                console.error('❌ Erro na API de feedback:', errorData);
+                throw new Error(errorData.erro || errorData.detail || 'Erro ao enviar feedback');
+            }
+            
+            const data = await response.json();
+            console.log('✅ Feedback enviado com sucesso:', data);
+            
+        } catch (error) {
+            console.error('❌ Erro ao enviar feedback:', error);
+            this.showErrorToast('Erro ao enviar feedback. Tente novamente mais tarde.');
+        }
+    }
+    
+    /**
+     * Mostra toast de agradecimento
+     */
+    showThankYouToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'feedback-toast success';
+        toast.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    /**
+     * Mostra toast de erro
+     */
+    showErrorToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'feedback-toast error';
+        toast.innerHTML = `
+            <i class="fas fa-exclamation-circle"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 }
 

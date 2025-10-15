@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analytics - Neoson</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #221620 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-header h1 {
+            color: #833178;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.2s;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .refresh-btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .kpi-card .icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .kpi-card h3 {
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .kpi-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .kpi-card .trend {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .trend.up {
+            color: #10b981;
+        }
+
+        .trend.down {
+            color: #ef4444;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .heatmap-container {
+            margin-top: 20px;
+        }
+
+        .heatmap-row {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .heatmap-cell {
+            flex: 1;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 12px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.05);
+        }
+
+        .heatmap-legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .insights-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .insights-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .insight-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .insight-item.warning {
+            border-left-color: #fbbf24;
+            background: #fffbeb;
+        }
+
+        .insight-item.critical {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .insight-item h4 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .insight-item p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #833178;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .filters-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Carregando dados do dashboard...</p>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1>
+                <i class="fas fa-chart-line"></i>
+                Dashboard Analytics - Neoson
+            </h1>
+            <button class="refresh-btn" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt"></i>
+                Atualizar Dados
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label>Período</label>
+                <select id="periodFilter" onchange="applyFilters()">
+                    <option value="7">Últimos 7 dias</option>
+                    <option value="30">Últimos 30 dias</option>
+                    <option value="90">Últimos 90 dias</option>
+                    <option value="365">Último ano</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Agente</label>
+                <select id="agentFilter" onchange="applyFilters()">
+                    <option value="all">Todos os agentes</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Classificação</label>
+                <select id="classificationFilter" onchange="applyFilters()">
+                    <option value="all">Todas</option>
+                    <option value="ti">TI</option>
+                    <option value="rh">RH</option>
+                    <option value="geral">Geral</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="icon">📊</div>
+                <h3>Total de Feedbacks</h3>
+                <div class="value" id="totalFeedbacks">0</div>
+                <div class="trend up" id="feedbackTrend">
+                    <i class="fas fa-arrow-up"></i> --
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="icon">⭐</div>
+                <h3>Satisfação Média</h3>
+                <div class="value" id="avgRating">0.0</div>
+                <div class="trend up" id="ratingTrend">
+                    <i class="fas fa-arrow-up"></i> --
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="icon">👍</div>
+                <h3>Taxa Positiva</h3>
+                <div class="value" id="positiveRate">0%</div>
+                <div class="trend up" id="positiveTrend">
+                    <i class="fas fa-arrow-up"></i> --
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="icon">⚡</div>
+                <h3>Tempo Médio</h3>
+                <div class="value" id="avgResponseTime">0s</div>
+                <div class="trend down" id="timeTrend">
+                    <i class="fas fa-arrow-down"></i> --
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h2><i class="fas fa-chart-bar"></i> Satisfação por Agente</h2>
+                <div class="chart-container">
+                    <canvas id="agentSatisfactionChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h2><i class="fas fa-chart-line"></i> Tendência Temporal</h2>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heatmap -->
+        <div class="chart-card">
+            <h2><i class="fas fa-fire"></i> Heatmap de Tópicos Problemáticos</h2>
+            <div class="heatmap-container" id="heatmapContainer">
+                <!-- Heatmap will be generated here -->
+            </div>
+            <div class="heatmap-legend">
+                <span>🟢 Baixa incidência</span>
+                <span>🟡 Média incidência</span>
+                <span>🟠 Alta incidência</span>
+                <span>🔴 Crítico</span>
+            </div>
+        </div>
+
+        <!-- Insights -->
+        <div class="insights-section">
+            <h2><i class="fas fa-lightbulb"></i> Insights Automáticos</h2>
+            <div id="insightsContainer">
+                <!-- Insights will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global charts
+        let agentChart, trendChart;
+        let currentData = null;
+
+        // Initialize dashboard on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDashboard();
+        });
+
+        async function initializeDashboard() {
+            showLoading();
+            await loadDashboardData();
+            hideLoading();
+        }
+
+        async function refreshDashboard() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.classList.add('loading');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
+            
+            await loadDashboardData();
+            
+            btn.classList.remove('loading');
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Atualizar Dados';
+        }
+
+        async function loadDashboardData() {
+            try {
+                const period = document.getElementById('periodFilter').value;
+                const agent = document.getElementById('agentFilter').value;
+                const classification = document.getElementById('classificationFilter').value;
+
+                const response = await fetch(`/api/dashboard/analytics?period=${period}&agent=${agent}&classification=${classification}`);
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar dados');
+                }
+
+                currentData = await response.json();
+                renderDashboard(currentData);
+            } catch (error) {
+                console.error('Erro ao carregar dashboard:', error);
+                alert('Erro ao carregar dados do dashboard. Tente novamente.');
+            }
+        }
+
+        function renderDashboard(data) {
+            // Update KPIs
+            updateKPIs(data.kpis);
+            
+            // Update agent filter options
+            updateAgentFilter(data.agents);
+            
+            // Render charts
+            renderAgentSatisfactionChart(data.agentStats);
+            renderTrendChart(data.trends);
+            
+            // Render heatmap
+            renderHeatmap(data.heatmap);
+            
+            // Generate insights
+            generateInsights(data);
+        }
+
+        function updateKPIs(kpis) {
+            document.getElementById('totalFeedbacks').textContent = kpis.total_feedbacks || 0;
+            document.getElementById('avgRating').textContent = (kpis.avg_rating || 0).toFixed(1);
+            document.getElementById('positiveRate').textContent = `${(kpis.positive_rate || 0).toFixed(1)}%`;
+            document.getElementById('avgResponseTime').textContent = `${(kpis.avg_response_time || 0).toFixed(1)}s`;
+
+            // Update trends
+            updateTrend('feedbackTrend', kpis.feedback_trend || 0);
+            updateTrend('ratingTrend', kpis.rating_trend || 0);
+            updateTrend('positiveTrend', kpis.positive_trend || 0);
+            updateTrend('timeTrend', kpis.time_trend || 0, true);
+        }
+
+        function updateTrend(elementId, value, inverse = false) {
+            const element = document.getElementById(elementId);
+            const isPositive = inverse ? value < 0 : value > 0;
+            
+            element.className = `trend ${isPositive ? 'up' : 'down'}`;
+            element.innerHTML = `
+                <i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i>
+                ${Math.abs(value).toFixed(1)}%
+            `;
+        }
+
+        function updateAgentFilter(agents) {
+            const filter = document.getElementById('agentFilter');
+            const currentValue = filter.value;
+            
+            filter.innerHTML = '<option value="all">Todos os agentes</option>';
+            agents.forEach(agent => {
+                const option = document.createElement('option');
+                option.value = agent;
+                option.textContent = agent;
+                filter.appendChild(option);
+            });
+            
+            filter.value = currentValue;
+        }
+
+        function renderAgentSatisfactionChart(agentStats) {
+            const ctx = document.getElementById('agentSatisfactionChart');
+            
+            if (agentChart) {
+                agentChart.destroy();
+            }
+
+            agentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: agentStats.map(s => s.agent),
+                    datasets: [{
+                        label: 'Rating Médio',
+                        data: agentStats.map(s => s.avg_rating),
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTrendChart(trends) {
+            const ctx = document.getElementById('trendChart');
+            
+            if (trendChart) {
+                trendChart.destroy();
+            }
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trends.map(t => t.date),
+                    datasets: [
+                        {
+                            label: 'Positivos',
+                            data: trends.map(t => t.positive),
+                            borderColor: 'rgb(16, 185, 129)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Negativos',
+                            data: trends.map(t => t.negative),
+                            borderColor: 'rgb(239, 68, 68)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderHeatmap(heatmapData) {
+            const container = document.getElementById('heatmapContainer');
+            container.innerHTML = '';
+
+            heatmapData.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'heatmap-row';
+
+                row.cells.forEach(cell => {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'heatmap-cell';
+                    cellDiv.style.background = getHeatmapColor(cell.value);
+                    cellDiv.textContent = `${cell.topic}\n${cell.count}`;
+                    cellDiv.title = `${cell.topic}: ${cell.count} feedbacks negativos`;
+                    rowDiv.appendChild(cellDiv);
+                });
+
+                container.appendChild(rowDiv);
+            });
+        }
+
+        function getHeatmapColor(value) {
+            if (value < 2) return '#10b981';
+            if (value < 5) return '#fbbf24';
+            if (value < 10) return '#f97316';
+            return '#ef4444';
+        }
+
+        function generateInsights(data) {
+            const container = document.getElementById('insightsContainer');
+            container.innerHTML = '';
+
+            data.insights.forEach(insight => {
+                const insightDiv = document.createElement('div');
+                insightDiv.className = `insight-item ${insight.severity || ''}`;
+                insightDiv.innerHTML = `
+                    <h4><i class="fas fa-${insight.icon || 'info-circle'}"></i> ${insight.title}</h4>
+                    <p>${insight.description}</p>
+                `;
+                container.appendChild(insightDiv);
+            });
+        }
+
+        function applyFilters() {
+            showLoading();
+            loadDashboardData().then(() => hideLoading());
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

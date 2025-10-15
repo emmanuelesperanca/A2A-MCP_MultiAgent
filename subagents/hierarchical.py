@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import logging
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+
+import numpy as np
+from langchain_openai import OpenAIEmbeddings
 
 if TYPE_CHECKING:
     from subagents.base_subagent import BaseSubagent
@@ -151,17 +155,21 @@ class TIHierarchicalAgent(HierarchicalAgent):
                 "certificação", "procedimento", "regulamentação", "27001",
                 "assinatura", "assinaturas", "eletrônica", "digital", "validação",
                 "senhas", "senha", "autenticação", "conformidade",
+                "abnt", "nbr", "13485", "9001", "14001", "45001",  # ← ADICIONADO
+                "capítulo", "seção", "artigo", "cláusula", "requisito",  # ← ADICIONADO
                 # Inglês
                 "policy", "policies", "governance", "compliance", "audit", "security",
                 "regulation", "standard", "certification", "procedure", "risk",
                 "control", "signature", "signatures", "sign", "electronic", "digital",
                 "validation", "password", "passwords", "authentication", "regulatory",
+                "chapter", "section", "article", "clause", "requirement",  # ← ADICIONADO
                 # Espanhol
                 "política", "políticas", "gobernanza", "cumplimiento", "auditoría",
-                "firma", "firmas", "electrónica", "validación", "contraseña"
+                "firma", "firmas", "electrónica", "validación", "contraseña",
+                "capítulo", "sección", "artículo", "cláusula"  # ← ADICIONADO
             ],
             description="Questões de governança, compliance e políticas de TI",
-            confidence_threshold=0.03,  # Threshold ainda mais baixo para captar melhor
+            confidence_threshold=0.02,  # ← REDUZIDO de 0.03 para 0.02 (mais sensível)
             priority=3
         )
         
@@ -184,12 +192,19 @@ class TIHierarchicalAgent(HierarchicalAgent):
             name="dev_delegation",
             target_subagent="dev",
             keywords=[
-                "desenvolvimento", "aplicação", "sistema", "código", "projeto",
-                "bug", "feature", "deploy", "release", "api", "banco", "dados",
-                "integração", "teste", "homologação", "produção", "aplicação"
+                # Palavras específicas de desenvolvimento
+                "desenvolvimento", "desenvolver", "aplicação", "aplicativo", 
+                "sistema", "código", "projeto", "software",
+                "bug", "erro", "feature", "funcionalidade", "deploy", "release",
+                "rest api", "api rest", "endpoint", "integração api",  # ← API mais específico
+                "banco de dados", "database", "sql", "query",
+                "integração", "teste", "homologação", "produção",
+                "frontend", "backend", "fullstack", "microserviço",
+                "git", "repositório", "branch", "commit", "pull request",
+                "docker", "container", "kubernetes", "devops"
             ],
             description="Questões de desenvolvimento e sistemas",
-            confidence_threshold=0.05,  # Threshold mais baixo
+            confidence_threshold=0.05,
             priority=1
         )
         
@@ -242,6 +257,272 @@ class TIHierarchicalAgent(HierarchicalAgent):
             print(f"🔍 Resposta genérica detectada: '{response[:100]}...'")
         
         return is_generic
+    
+    def _validate_response_quality(
+        self, 
+        query: str, 
+        response: str, 
+        context_docs: Optional[List[Dict]] = None
+    ) -> Tuple[bool, float, Dict[str, float]]:
+        """
+        Validação multi-critério da qualidade da resposta.
+        
+        Args:
+            query: Pergunta original do usuário
+            response: Resposta gerada pelo agente
+            context_docs: Documentos usados como contexto (opcional)
+            
+        Returns:
+            (is_valid, overall_score, detailed_scores)
+            - is_valid: True se a resposta passa no threshold geral (>= 0.70)
+            - overall_score: Score ponderado final (0-1)
+            - detailed_scores: Dicionário com scores individuais de cada critério
+        """
+        scores = {}
+        
+        # 1. CRITÉRIO: Especificidade (35% do peso)
+        # Verifica se resposta não é genérica e tem conteúdo substantivo
+        specificity_score = self._check_specificity(response)
+        scores['specificity'] = specificity_score
+        
+        # 2. CRITÉRIO: Relevância Semântica (35% do peso)
+        # Verifica se resposta está semanticamente relacionada à pergunta
+        relevance_score = self._check_semantic_relevance(query, response)
+        scores['relevance'] = relevance_score
+        
+        # 3. CRITÉRIO: Citação de Fontes (20% do peso)
+        # Verifica se resposta menciona documentos e não inventa informações
+        citation_score = self._check_citations(response, context_docs)
+        scores['citations'] = citation_score
+        
+        # 4. CRITÉRIO: Completude (10% do peso)
+        # Verifica se resposta tem profundidade adequada
+        completeness_score = self._check_completeness(response)
+        scores['completeness'] = completeness_score
+        
+        # Calcular score ponderado final
+        overall_score = (
+            specificity_score * 0.35 +
+            relevance_score * 0.35 +
+            citation_score * 0.20 +
+            completeness_score * 0.10
+        )
+
+        # Threshold para aprovação: 0.50 (50%)
+        is_valid = overall_score >= 0.50
+        
+        # Log detalhado para debugging
+        print(f"\n{'='*60}")
+        print(f"🔍 VALIDAÇÃO DE QUALIDADE DA RESPOSTA")
+        print(f"{'='*60}")
+        print(f"📊 Especificidade:      {specificity_score:.2f} (35% peso)")
+        print(f"🎯 Relevância Semântica: {relevance_score:.2f} (35% peso)")
+        print(f"📚 Citação de Fontes:   {citation_score:.2f} (20% peso)")
+        print(f"✅ Completude:          {completeness_score:.2f} (10% peso)")
+        print(f"{'─'*60}")
+        print(f"🏆 SCORE FINAL: {overall_score:.2f} ({'✅ APROVADO' if is_valid else '❌ REJEITADO'})")
+        print(f"{'='*60}\n")
+        
+        return is_valid, overall_score, scores
+    
+    def _check_specificity(self, response: str) -> float:
+        """
+        Verifica se a resposta é específica e não genérica.
+        
+        Retorna score de 0 a 1:
+        - 0.0: Completamente genérica
+        - 1.0: Altamente específica
+        """
+        # 1. Verificar frases genéricas (método existente)
+        if self._is_generic_response(response):
+            return 0.0
+        
+        # 2. Verificar comprimento mínimo
+        if len(response.split()) < 30:
+            return 0.3  # Muito curta, provavelmente superficial
+        
+        # 3. Verificar presença de informações técnicas/específicas
+        # Indicadores de especificidade: números, datas, nomes próprios, termos técnicos
+        specificity_indicators = 0
+        
+        # Números e percentuais
+        if re.search(r'\d+', response):
+            specificity_indicators += 1
+        
+        # Datas
+        if re.search(r'\b(20\d{2}|19\d{2})\b', response):
+            specificity_indicators += 1
+        
+        # Nomes próprios (palavras capitalizadas no meio do texto)
+        proper_nouns = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', response)
+        if len(proper_nouns) >= 2:
+            specificity_indicators += 1
+        
+        # Termos técnicos comuns em documentação
+        technical_terms = [
+            'sistema', 'processo', 'procedimento', 'requisito', 'norma',
+            'política', 'regulamentação', 'compliance', 'auditoria',
+            'configuração', 'implementação', 'validação', 'verificação'
+        ]
+        response_lower = response.lower()
+        if sum(1 for term in technical_terms if term in response_lower) >= 2:
+            specificity_indicators += 1
+        
+        # Score baseado em indicadores (máximo 4)
+        specificity_score = min(1.0, 0.5 + (specificity_indicators * 0.15))
+        
+        return specificity_score
+    
+    def _check_semantic_relevance(self, query: str, response: str) -> float:
+        """
+        Verifica relevância semântica entre pergunta e resposta usando embeddings.
+        
+        Retorna score de 0 a 1 baseado em similaridade coseno.
+        """
+        try:
+            # Inicializar embeddings (lazy loading)
+            if not hasattr(self, '_embeddings'):
+                self._embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+            
+            # Gerar embeddings
+            query_embedding = self._embeddings.embed_query(query)
+            response_embedding = self._embeddings.embed_query(response[:1000])  # Limitar tamanho
+            
+            # Calcular similaridade coseno
+            query_vec = np.array(query_embedding)
+            response_vec = np.array(response_embedding)
+            
+            cosine_sim = np.dot(query_vec, response_vec) / (
+                np.linalg.norm(query_vec) * np.linalg.norm(response_vec)
+            )
+            
+            # Normalizar para 0-1 (cosine já retorna -1 a 1, mas em prática é 0-1 para textos)
+            relevance_score = max(0.0, min(1.0, cosine_sim))
+            
+            return relevance_score
+            
+        except Exception as e:
+            logger.warning(f"Erro ao calcular relevância semântica: {e}")
+            # Fallback: se houver erro, assumir relevância moderada
+            return 0.65
+    
+    def _check_citations(self, response: str, context_docs: Optional[List[Dict]]) -> float:
+        """
+        Verifica se resposta cita fontes do contexto e não inventa informações.
+        
+        Retorna score de 0 a 1:
+        - 1.0: Cita múltiplas fontes claramente
+        - 0.5-0.8: Cita algumas fontes
+        - 0.0-0.4: Não cita fontes ou inventa informações
+        """
+        # Se não há contexto disponível, não podemos validar citações
+        if not context_docs:
+            # Verificar se resposta pelo menos menciona buscar/consultar documentos
+            if any(term in response.lower() for term in ['documento', 'política', 'norma', 'procedimento', 'regulamentação']):
+                return 0.6  # Menciona conceitos gerais de documentação
+            return 0.4  # Sem contexto e sem menção a fontes
+        
+        response_lower = response.lower()
+        citations_found = 0
+        
+        # Procurar menções aos documentos do contexto
+        for doc in context_docs:
+            doc_title = doc.get('titulo', '').lower()
+            doc_source = doc.get('fonte', '').lower()
+            
+            # Verificar se título ou fonte são mencionados na resposta
+            if doc_title and len(doc_title) > 10:  # Ignorar títulos muito curtos
+                # Procurar por match parcial (pelo menos 60% das palavras principais)
+                title_words = [w for w in doc_title.split() if len(w) > 3]
+                if title_words:
+                    matches = sum(1 for word in title_words if word in response_lower)
+                    if matches / len(title_words) >= 0.6:
+                        citations_found += 1
+                        continue
+            
+            # Verificar fonte (ISO, RDC, FDA, etc.)
+            if doc_source and doc_source in response_lower:
+                citations_found += 1
+        
+        # Calcular score baseado em número de citações
+        num_docs = len(context_docs)
+        if num_docs == 0:
+            return 0.5
+        
+        citation_ratio = citations_found / num_docs
+        
+        # Score progressivo:
+        # - 0 citações: 0.0
+        # - 1-25% citações: 0.5
+        # - 26-50% citações: 0.7
+        # - 51-75% citações: 0.85
+        # - 76-100% citações: 1.0
+        if citation_ratio == 0:
+            return 0.0
+        elif citation_ratio <= 0.25:
+            return 0.5
+        elif citation_ratio <= 0.50:
+            return 0.7
+        elif citation_ratio <= 0.75:
+            return 0.85
+        else:
+            return 1.0
+    
+    def _check_completeness(self, response: str) -> float:
+        """
+        Verifica se resposta tem profundidade e completude adequadas.
+        
+        Retorna score de 0 a 1 baseado em:
+        - Comprimento adequado
+        - Estrutura (múltiplos parágrafos)
+        - Presença de listas ou enumerações
+        - Conclusão ou próximos passos
+        """
+        words = response.split()
+        num_words = len(words)
+        
+        score = 0.0
+        
+        # 1. Comprimento adequado (40% do critério)
+        if num_words < 50:
+            score += 0.0
+        elif num_words < 100:
+            score += 0.2
+        elif num_words < 200:
+            score += 0.3
+        else:
+            score += 0.4
+        
+        # 2. Estrutura em parágrafos (30% do critério)
+        paragraphs = [p.strip() for p in response.split('\n\n') if p.strip()]
+        if len(paragraphs) >= 2:
+            score += 0.3
+        elif len(paragraphs) == 1 and num_words > 100:
+            score += 0.15
+        
+        # 3. Listas ou enumerações (20% do critério)
+        # Detectar bullets, números, ou estruturas enumeradas
+        has_lists = any(char in response for char in ['•', '●', '◦', '▪']) or \
+                   bool(re.search(r'\n\s*[-*]\s+', response)) or \
+                   bool(re.search(r'\n\s*\d+[.)]\s+', response))
+        
+        if has_lists:
+            score += 0.2
+        
+        # 4. Conclusão ou próximos passos (10% do critério)
+        conclusion_indicators = [
+            'portanto', 'assim', 'dessa forma', 'em resumo', 'concluindo',
+            'próximos passos', 'recomendo', 'sugiro', 'você pode',
+            'para mais informações', 'consulte', 'entre em contato'
+        ]
+        
+        response_lower = response.lower()
+        has_conclusion = any(indicator in response_lower for indicator in conclusion_indicators)
+        
+        if has_conclusion:
+            score += 0.1
+        
+        return min(1.0, score)
     
     def _get_delegation_reason(self, query: str, agent_type: str, score: float) -> str:
         """Explica o motivo da delegação para transparência."""
@@ -314,16 +595,34 @@ class TIHierarchicalAgent(HierarchicalAgent):
                     print(f"📝 {sub_agent.config.name} retornou {len(result)} caracteres")
                     print(f"🔍 Primeiros 100 chars: '{result[:100]}...'")
                     
-                    # Verificar se o resultado é genérico (indica que não achou dados)
-                    if self._is_generic_response(result):
-                        print(f"🔍 Resposta detectada como genérica por {sub_agent.config.name}")
-                        decision_chain.append(f"❌ **Resultado**: {sub_agent.config.name} não encontrou informações específicas")
-                        if i < len(candidates) - 1:  # Se não é o último candidato
+                    # VALIDAÇÃO ROBUSTA DE QUALIDADE (4 critérios)
+                    # Tentar obter documentos do contexto (se o sub-agente expôs isso)
+                    context_docs = None
+                    if hasattr(sub_agent, '_last_context_docs'):
+                        context_docs = sub_agent._last_context_docs
+                    
+                    is_valid, quality_score, detailed_scores = self._validate_response_quality(
+                        query=query,
+                        response=result,
+                        context_docs=context_docs
+                    )
+                    
+                    # Log dos resultados da validação
+                    if not is_valid:
+                        print(f"❌ Resposta rejeitada por {sub_agent.config.name} (score: {quality_score:.2f})")
+                        decision_chain.append(f"❌ **Resultado**: Resposta de {sub_agent.config.name} não passou na validação de qualidade")
+                        decision_chain.append(f"📊 **Score de Qualidade**: {quality_score:.2f}/1.00 (threshold: 0.70)")
+                        decision_chain.append(f"📈 **Detalhamento**: Especificidade {detailed_scores['specificity']:.2f}, Relevância {detailed_scores['relevance']:.2f}, Citações {detailed_scores['citations']:.2f}, Completude {detailed_scores['completeness']:.2f}")
+                        
+                        if i < len(candidates) - 1:
                             decision_chain.append("⚡ **Ação**: Tentando próximo especialista na hierarquia...")
                         continue
                     
                     # Sucesso! Adiciona cadeia de decisão transparente
-                    decision_chain.append(f"✅ **Sucesso**: {sub_agent.config.name} encontrou informações relevantes!")
+                    print(f"✅ Resposta aprovada (score: {quality_score:.2f})")
+                    decision_chain.append(f"✅ **Sucesso**: {sub_agent.config.name} forneceu resposta de qualidade!")
+                    decision_chain.append(f"📊 **Score de Qualidade**: {quality_score:.2f}/1.00")
+                    decision_chain.append(f"📈 **Detalhamento**: Especificidade {detailed_scores['specificity']:.2f}, Relevância {detailed_scores['relevance']:.2f}, Citações {detailed_scores['citations']:.2f}, Completude {detailed_scores['completeness']:.2f}")
                     
                     # Montar resposta com transparência completa
                     transparency_section = "\n\n" + "="*60 + "\n"

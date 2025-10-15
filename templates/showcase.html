@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neoson - Sistema Multi-Agente de IA | Straumann Group</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --color-primary: #36393A;
+            --color-secondary: #833178;
+            --color-accent: #B98C3C;
+            --bg-dark: #0A0A0A;
+            --bg-dark-secondary: #1A1A1A;
+            --gradient-primary: linear-gradient(135deg, #833178 0%, #0B3DB8 100%);
+            --gradient-secondary: linear-gradient(135deg, #833178 0%, #B98C3C 100%);
+            --gradient-accent: linear-gradient(135deg, #B98C3C 0%, #D4A853 100%);
+            --gradient-hero: linear-gradient(135deg, #833178 0%, #B98C3C 100%);
+            --shadow-xl: 0 16px 48px rgba(25, 90, 250, 0.25);
+            --shadow-glow: 0 0 40px rgba(25, 90, 250, 0.5);
+            --text-primary: #FFFFFF;
+            --text-secondary: #E8E8E8;
+            --text-muted: #B0B0B0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* HEADER FIXO */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(25, 90, 250, 0.2);
+            padding: 20px 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .header.scrolled {
+            padding: 12px 0;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 28px;
+            font-weight: 800;
+            background: var(--gradient-secondary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .cta-btn {
+            padding: 14px 32px;
+            background: var(--gradient-primary);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-xl);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-xl), var(--shadow-glow);
+        }
+
+        /* HERO SECTION */
+        .hero {
+            margin-top: 100px;
+            padding: 100px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(25, 90, 250, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 24px;
+            background: rgba(25, 90, 250, 0.15);
+            border: 1px solid rgba(25, 90, 250, 0.3);
+            border-radius: 50px;
+            color: var(--color-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero h1 {
+            font-size: 72px;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        .hero-subtitle {
+            font-size: 24px;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            line-height: 1.6;
+            animation: fadeInUp 0.8s ease-out 0.4s backwards;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            animation: fadeInUp 0.8s ease-out 0.6s backwards;
+        }
+
+        .primary-cta {
+            padding: 18px 40px;
+            background: var(--gradient-primary);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-xl);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .primary-cta:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-xl), var(--shadow-glow);
+        }
+
+        .secondary-cta {
+            padding: 18px 40px;
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid rgba(25, 90, 250, 0.5);
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .secondary-cta:hover {
+            border-color: var(--color-secondary);
+            background: rgba(25, 90, 250, 0.1);
+        }
+
+        /* STATS SECTION */
+        .stats {
+            padding: 80px 40px;
+            background: var(--bg-dark-secondary);
+            border-top: 1px solid rgba(25, 90, 250, 0.2);
+            border-bottom: 1px solid rgba(25, 90, 250, 0.2);
+        }
+
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 32px;
+            background: rgba(25, 90, 250, 0.05);
+            border: 1px solid rgba(25, 90, 250, 0.2);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--color-secondary);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .stat-number {
+            font-size: 56px;
+            font-weight: 900;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* FEATURES SECTION */
+        .features {
+            padding: 120px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(185, 140, 60, 0.15);
+            border: 1px solid rgba(185, 140, 60, 0.3);
+            border-radius: 50px;
+            color: var(--color-accent);
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section-title {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            background: var(--gradient-secondary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subtitle {
+            font-size: 20px;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+
+        .feature-card {
+            background: rgba(54, 57, 58, 0.4);
+            border: 1px solid rgba(25, 90, 250, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-12px);
+            border-color: var(--color-secondary);
+            box-shadow: var(--shadow-xl), var(--shadow-glow);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            width: 72px;
+            height: 72px;
+            background: var(--gradient-primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .feature-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .feature-list li i {
+            color: var(--color-secondary);
+            font-size: 16px;
+        }
+
+        /* AGENTS SECTION */
+        .agents {
+            padding: 120px 40px;
+            background: var(--bg-dark-secondary);
+        }
+
+        .agents-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-top: 60px;
+        }
+
+        .agent-card {
+            background: rgba(54, 57, 58, 0.4);
+            border: 1px solid rgba(25, 90, 250, 0.2);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--color-secondary);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .agent-avatar {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto 20px;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .agent-card.ti .agent-avatar {
+            background: var(--gradient-primary);
+        }
+
+        .agent-card.rh .agent-avatar {
+            background: var(--gradient-accent);
+        }
+
+        .agent-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .agent-role {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .agent-specialty {
+            padding: 6px 16px;
+            background: rgba(25, 90, 250, 0.2);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-secondary);
+            display: inline-block;
+        }
+
+        .agent-card.rh .agent-specialty {
+            background: rgba(185, 140, 60, 0.2);
+            color: var(--color-accent);
+        }
+
+        /* TECH STACK */
+        .tech-stack {
+            padding: 120px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .tech-category {
+            background: rgba(54, 57, 58, 0.4);
+            border: 1px solid rgba(25, 90, 250, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+        }
+
+        .tech-category-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tech-category-title i {
+            color: var(--color-secondary);
+        }
+
+        .tech-items {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .tech-item {
+            background: rgba(25, 90, 250, 0.1);
+            border: 1px solid rgba(25, 90, 250, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .tech-item:hover {
+            border-color: var(--color-secondary);
+            background: rgba(25, 90, 250, 0.2);
+            transform: translateX(8px);
+        }
+
+        .tech-icon {
+            font-size: 24px;
+            color: var(--color-secondary);
+        }
+
+        .tech-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* ROI SECTION */
+        .roi {
+            padding: 120px 40px;
+            background: var(--bg-dark-secondary);
+        }
+
+        .roi-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .roi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-top: 60px;
+        }
+
+        .roi-card {
+            background: var(--gradient-primary);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .roi-card:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-xl), var(--shadow-glow);
+        }
+
+        .roi-percentage {
+            font-size: 64px;
+            font-weight: 900;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .roi-label {
+            font-size: 18px;
+            color: var(--text-primary);
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        /* CTA SECTION */
+        .final-cta {
+            padding: 120px 40px;
+            text-align: center;
+        }
+
+        .final-cta-content {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(54, 57, 58, 0.6);
+            border: 1px solid rgba(25, 90, 250, 0.3);
+            border-radius: 24px;
+            padding: 80px 60px;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .final-cta h2 {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 24px;
+            background: var(--gradient-secondary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .final-cta p {
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        /* FOOTER */
+        .footer {
+            padding: 60px 40px 40px;
+            background: var(--bg-dark-secondary);
+            border-top: 1px solid rgba(25, 90, 250, 0.2);
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand h3 {
+            font-size: 28px;
+            font-weight: 900;
+            background: var(--gradient-secondary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 16px;
+        }
+
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(25, 90, 250, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-secondary);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .social-icon:hover {
+            background: var(--gradient-primary);
+            color: var(--text-primary);
+            transform: translateY(-4px);
+        }
+
+        .footer-section h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 12px;
+        }
+
+        .footer-section ul li a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .footer-section ul li a:hover {
+            color: var(--color-secondary);
+            padding-left: 8px;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid rgba(25, 90, 250, 0.2);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 1200px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .agents-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 968px) {
+            .hero h1 {
+                font-size: 48px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .agents-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tech-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .roi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header-container {
+                padding: 0 20px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 60px 20px;
+            }
+
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero-subtitle {
+                font-size: 18px;
+            }
+
+            .hero-ctas {
+                flex-direction: column;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .agents-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ANIMAÇÕES EXTRAS */
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .feature-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .feature-card:nth-child(1) .feature-icon { animation-delay: 0s; }
+        .feature-card:nth-child(2) .feature-icon { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) .feature-icon { animation-delay: 0.4s; }
+        .feature-card:nth-child(4) .feature-icon { animation-delay: 0.6s; }
+        .feature-card:nth-child(5) .feature-icon { animation-delay: 0.8s; }
+        .feature-card:nth-child(6) .feature-icon { animation-delay: 1s; }
+
+        /* FLOWCHART SECTION */
+        .flowchart-section {
+            padding: 100px 20px;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flowchart-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(25, 90, 250, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .flow-step {
+            max-width: 600px;
+            margin: 0 auto 20px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .flow-step:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(25, 90, 250, 0.3);
+            box-shadow: 0 10px 40px rgba(25, 90, 250, 0.2);
+        }
+
+        .flow-highlight {
+            border: 2px solid rgba(25, 90, 250, 0.6);
+            background: linear-gradient(135deg, rgba(25, 90, 250, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            box-shadow: 0 0 30px rgba(25, 90, 250, 0.3);
+        }
+
+        .flow-highlight:hover {
+            border-color: rgba(25, 90, 250, 0.9);
+            box-shadow: 0 0 50px rgba(25, 90, 250, 0.5);
+        }
+
+        .flow-success {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(34, 197, 94, 0.2) 100%);
+            border: 2px solid rgba(74, 222, 128, 0.6);
+            box-shadow: 0 0 30px rgba(74, 222, 128, 0.3);
+        }
+
+        .flow-success:hover {
+            border-color: rgba(74, 222, 128, 0.9);
+            box-shadow: 0 0 50px rgba(74, 222, 128, 0.5);
+        }
+
+        .flow-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #195AFA, #8b5cf6);
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .flow-icon {
+            font-size: 48px;
+            margin: 15px 0;
+            background: linear-gradient(135deg, #195AFA, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .flow-highlight .flow-icon {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .flow-success .flow-icon {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .flow-step h3 {
+            font-size: 24px;
+            margin: 15px 0 10px;
+            color: white;
+        }
+
+        .flow-step p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: rgba(25, 90, 250, 0.5);
+            font-size: 30px;
+            margin: 10px 0;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(10px);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+
+        .flow-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .flow-metrics {
+            max-width: 900px;
+            margin: 60px auto 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 0 20px;
+        }
+
+        .flow-metric {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .flow-metric:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(25, 90, 250, 0.2);
+        }
+
+        .flow-metric i {
+            display: block;
+            font-size: 28px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #195AFA, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* RESPONSIVE FLOWCHART */
+        @media (max-width: 968px) {
+            .flowchart-section {
+                padding: 60px 15px;
+            }
+
+            .flow-step {
+                padding: 25px;
+            }
+
+            .flow-step h3 {
+                font-size: 20px;
+            }
+
+            .flow-step p {
+                font-size: 14px;
+            }
+
+            .flow-metrics {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .flow-step {
+                padding: 20px;
+            }
+
+            .flow-icon {
+                font-size: 36px;
+            }
+
+            .flow-step h3 {
+                font-size: 18px;
+            }
+
+            .flow-step p {
+                font-size: 13px;
+            }
+
+            .flow-metrics {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .flow-metric {
+                padding: 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header" id="header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                NEOSON
+            </div>
+            <nav class="nav-links">
+                <a href="#flowchart">Como Funciona</a>
+                <a href="#features">Funcionalidades</a>
+                <a href="#agents">Agentes</a>
+                <a href="#tech">Tecnologia</a>
+                <a href="#roi">ROI</a>
+                <a href="/" class="cta-btn">
+                    <i class="fas fa-rocket"></i>
+                    Acessar Sistema
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fas fa-star"></i>
+                Sistema Multi-Agente de IA
+            </div>
+            <h1>Transformando nossa empresa com IA</h1>
+            <p class="hero-subtitle">
+                O Neoson Reborn é um projeto de um sistema inteligente que combina inúmeros agentes especializados para responder perguntas de TI, RH, Financeiro, Engenharia e etc, com precisão cirúrgica, velocidade incomparável e contexto enriquecido.
+            </p>
+            <div class="hero-ctas">
+                <a href="/" class="primary-cta">
+                    <i class="fas fa-play-circle"></i>
+                    Experimentar Agora
+                </a>
+                <a href="/dashboard" class="secondary-cta" target="_blank">
+                    <i class="fas fa-chart-line"></i>
+                    Ver Dashboard Analytics
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats">
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number">8</div>
+                <div class="stat-label">Agentes Especializados Até Agora</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">95%</div>
+                <div class="stat-label">Taxa de Acerto</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3s</div>
+                <div class="stat-label">Tempo Médio de Resposta</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Disponibilidade</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FLOWCHART -->
+    <section class="flowchart-section" id="flowchart">
+        <div class="section-header">
+            <div class="section-badge">🔄 Como Funciona</div>
+            <h2 class="section-title">Fluxo de Processamento Inteligente</h2>
+            <p class="section-subtitle">
+                Veja como o Neoson transforma sua pergunta em uma resposta precisa e enriquecida em segundos
+            </p>
+        </div>
+
+        <div class="flowchart-container">
+            <!-- Step 1 -->
+            <div class="flow-step">
+                <div class="flow-number">1</div>
+                <div class="flow-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h3 class="flow-title">Pergunta do Usuário</h3>
+                <p class="flow-description">
+                    Você faz uma pergunta sobre TI, RH ou qualquer área
+                </p>
+            </div>
+
+            <div class="flow-arrow">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="flow-step flow-highlight">
+                <div class="flow-number">2</div>
+                <div class="flow-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <h3 class="flow-title">Glossário Corporativo</h3>
+                <p class="flow-description">
+                    Sistema detecta jargões (GBS, PPR, VDI, SAP...) e adiciona contexto
+                </p>
+                <div class="flow-badge">🆕 v3.0</div>
+            </div>
+
+            <div class="flow-arrow">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="flow-step flow-highlight">
+                <div class="flow-number">3</div>
+                <div class="flow-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="flow-title">Classificação Inteligente (LLM)</h3>
+                <p class="flow-description">
+                    IA analisa sua pergunta e escolhe os 3 melhores agentes especialistas
+                </p>
+                <div class="flow-badge">🆕 v3.0</div>
+            </div>
+
+            <div class="flow-arrow">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="flow-step">
+                <div class="flow-number">4</div>
+                <div class="flow-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h3 class="flow-title">Direcionamento</h3>
+                <p class="flow-description">
+                    Pergunta é direcionada para a área correta (TI ou RH)
+                </p>
+            </div>
+
+            <div class="flow-arrow">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="flow-step">
+                <div class="flow-number">5</div>
+                <div class="flow-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 class="flow-title">Busca Vetorial (RAG)</h3>
+                <p class="flow-description">
+                    Busca em base de conhecimento com embeddings e pgvector
+                </p>
+            </div>
+
+            <div class="flow-arrow">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="flow-step">
+                <div class="flow-number">6</div>
+                <div class="flow-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3 class="flow-title">Agente Especialista</h3>
+                <p class="flow-description">
+                    Agente especializado processa e gera resposta contextualizada
+                </p>
+            </div>
+
+            <div class="flow-arrow">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="flow-step">
+                <div class="flow-number">7</div>
+                <div class="flow-icon">
+                    <i class="fas fa-sparkles"></i>
+                </div>
+                <h3 class="flow-title">Enriquecimento</h3>
+                <p class="flow-description">
+                    Resposta enriquecida com docs, FAQs, contatos, sugestões e glossário
+                </p>
+            </div>
+
+            <div class="flow-arrow">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <!-- Step 8 -->
+            <div class="flow-step flow-highlight">
+                <div class="flow-number">8</div>
+                <div class="flow-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="flow-title">Validação de Segurança</h3>
+                <p class="flow-description">
+                    Remove links automaticamente e valida conteúdo
+                </p>
+                <div class="flow-badge">🆕 v3.0</div>
+            </div>
+
+            <div class="flow-arrow">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <!-- Step 9 -->
+            <div class="flow-step flow-success">
+                <div class="flow-number">9</div>
+                <div class="flow-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 class="flow-title">Resposta Entregue</h3>
+                <p class="flow-description">
+                    Você recebe uma resposta completa, precisa e segura em ~3 segundos!
+                </p>
+            </div>
+        </div>
+
+        <!-- Métricas do Fluxo -->
+        <div class="flow-metrics">
+            <div class="flow-metric">
+                <div class="metric-icon"><i class="fas fa-clock"></i></div>
+                <div class="metric-value">~3s</div>
+                <div class="metric-label">Tempo Total</div>
+            </div>
+            <div class="flow-metric">
+                <div class="metric-icon"><i class="fas fa-users"></i></div>
+                <div class="metric-value">8</div>
+                <div class="metric-label">Agentes Ativos</div>
+            </div>
+            <div class="flow-metric">
+                <div class="metric-icon"><i class="fas fa-database"></i></div>
+                <div class="metric-value">1000+</div>
+                <div class="metric-label">Documentos</div>
+            </div>
+            <div class="flow-metric">
+                <div class="metric-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="metric-value">95%</div>
+                <div class="metric-label">Precisão</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <div class="section-badge">🚀 Funcionalidades</div>
+            <h2 class="section-title">Por que escolher o Neoson?</h2>
+            <p class="section-subtitle">
+                Uma plataforma completa com recursos avançados de IA, analytics em tempo real e experiência premium para sua equipe.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <!-- Feature 1 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="feature-title">Inteligência Multi-Agente</h3>
+                <p class="feature-description">
+                    Sistema hierárquico multi-agente especializado que trabalha em conjunto para fornecer respostas precisas.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> Agentes TI especializados</li>
+                    <li><i class="fas fa-check-circle"></i> Agentes especializados de diversas áreas</li>
+                    <li><i class="fas fa-check-circle"></i> Coordenação inteligente</li>
+                    <li><i class="fas fa-check-circle"></i> RAG com base de conhecimento</li>
+                </ul>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-sparkles"></i>
+                </div>
+                <h3 class="feature-title">Respostas Enriquecidas</h3>
+                <p class="feature-description">
+                    Cada resposta vem com documentos relacionados, FAQs similares, contatos de especialistas e muito mais.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> Documentos relacionados</li>
+                    <li><i class="fas fa-check-circle"></i> FAQs similares com ratings</li>
+                    <li><i class="fas fa-check-circle"></i> Contatos de especialistas</li>
+                    <li><i class="fas fa-check-circle"></i> Sugestões de perguntas</li>
+                    <li><i class="fas fa-check-circle"></i> Glossário técnico automático</li>
+                </ul>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="feature-title">Dashboard Analytics </h3>
+                <p class="feature-description">
+                    Monitore KPIs, tendências e satisfação em tempo real com visualizações interativas.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> KPIs em tempo real</li>
+                    <li><i class="fas fa-check-circle"></i> Gráficos interativos</li>
+                    <li><i class="fas fa-check-circle"></i> Análise de sentimento</li>
+                    <li><i class="fas fa-check-circle"></i> Insights automáticos</li>
+                </ul>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3 class="feature-title">Base de Conhecimento Vetorial</h3>
+                <p class="feature-description">
+                    Sistema RAG avançado com PostgreSQL + pgvector para busca semântica ultra-rápida.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> Embeddings OpenAI</li>
+                    <li><i class="fas fa-check-circle"></i> Busca vetorial IVFFlat</li>
+                    <li><i class="fas fa-check-circle"></i> Reranking inteligente</li>
+                    <li><i class="fas fa-check-circle"></i> Permissões por área</li>
+                </ul>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h3 class="feature-title">Sistema de Feedback Avançado</h3>
+                <p class="feature-description">
+                    Aprenda continuamente com feedbacks dos usuários e otimize as respostas automaticamente.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> Ratings (1-5 estrelas)</li>
+                    <li><i class="fas fa-check-circle"></i> Comentários detalhados</li>
+                    <li><i class="fas fa-check-circle"></i> Aprendizado contínuo</li>
+                    <li><i class="fas fa-check-circle"></i> Histórico completo</li>
+                </ul>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3 class="feature-title">Design Responsivo</h3>
+                <p class="feature-description">
+                    Interface moderna com dark theme, glassmorphism e experiência fluida em qualquer dispositivo.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> Dark theme</li>
+                    <li><i class="fas fa-check-circle"></i> Glassmorphism effects</li>
+                    <li><i class="fas fa-check-circle"></i> Animações suaves</li>
+                    <li><i class="fas fa-check-circle"></i> Mobile-first</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- AGENTS -->
+    <section class="agents" id="agents">
+        <div class="agents-container">
+            <div class="section-header">
+                <div class="section-badge">🤖 Agentes Inteligentes</div>
+                <h2 class="section-title">Conheça Nossa Equipe de IA</h2>
+                <p class="section-subtitle">
+                    8 especialistas virtuais trabalhando 24/7 para atender sua empresa com expertise e precisão.
+                </p>
+            </div>
+
+            <div class="agents-grid">
+                <!-- Agente TI - Governance -->
+                <div class="agent-card ti">
+                    <div class="agent-avatar">🏛️</div>
+                    <div class="agent-name">Ariel</div>
+                    <div class="agent-role">Governance Specialist</div>
+                    <span class="agent-specialty">Compliance & Políticas</span>
+                </div>
+
+                <!-- Agente TI - Infra -->
+                <div class="agent-card ti">
+                    <div class="agent-avatar">🖥️</div>
+                    <div class="agent-name">Alice</div>
+                    <div class="agent-role">Infrastructure Expert</div>
+                    <span class="agent-specialty">Servidores & Cloud</span>
+                </div>
+
+                <!-- Agente TI - Dev -->
+                <div class="agent-card ti">
+                    <div class="agent-avatar">⚡</div>
+                    <div class="agent-name">Carlos</div>
+                    <div class="agent-role">Development Lead</div>
+                    <span class="agent-specialty">APIs & Sistemas</span>
+                </div>
+
+                <!-- Agente TI - EndUser -->
+                <div class="agent-card ti">
+                    <div class="agent-avatar">🎧</div>
+                    <div class="agent-name">Marina</div>
+                    <div class="agent-role">End-User Support</div>
+                    <span class="agent-specialty">Suporte Técnico</span>
+                </div>
+
+                <!-- Agente RH - Admin -->
+                <div class="agent-card rh">
+                    <div class="agent-avatar">👔</div>
+                    <div class="agent-name">Ana</div>
+                    <div class="agent-role">Admin Specialist</div>
+                    <span class="agent-specialty">Processos & Documentação</span>
+                </div>
+
+                <!-- Agente RH - Benefits -->
+                <div class="agent-card rh">
+                    <div class="agent-avatar">💼</div>
+                    <div class="agent-name">Bruno</div>
+                    <div class="agent-role">Benefits Expert</div>
+                    <span class="agent-specialty">Benefícios & Pagamentos</span>
+                </div>
+
+                <!-- Agente RH - Training -->
+                <div class="agent-card rh">
+                    <div class="agent-avatar">📚</div>
+                    <div class="agent-name">Carla</div>
+                    <div class="agent-role">Training Manager</div>
+                    <span class="agent-specialty">Capacitação & Desenvolvimento</span>
+                </div>
+
+                <!-- Agente RH - Relations -->
+                <div class="agent-card rh">
+                    <div class="agent-avatar">🔄</div>
+                    <div class="agent-name">Diego</div>
+                    <div class="agent-role">Relations Coordinator</div>
+                    <span class="agent-specialty">Clima & Cultura</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TECH STACK -->
+    <section class="tech-stack" id="tech">
+        <div class="section-header">
+            <div class="section-badge">⚙️ Tecnologia</div>
+            <h2 class="section-title">Stack Tecnológico Premium</h2>
+            <p class="section-subtitle">
+                Construído com as tecnologias mais modernas e confiáveis do mercado para garantir performance e escalabilidade.
+            </p>
+        </div>
+
+        <div class="tech-grid">
+            <!-- Backend -->
+            <div class="tech-category">
+                <h3 class="tech-category-title">
+                    <i class="fas fa-server"></i>
+                    Backend & IA
+                </h3>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <i class="tech-icon fab fa-python"></i>
+                        <span class="tech-name">Python 3.11</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-bolt"></i>
+                        <span class="tech-name">FastAPI</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-brain"></i>
+                        <span class="tech-name">OpenAI GPT-4o</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-robot"></i>
+                        <span class="tech-name">LangChain</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-sync"></i>
+                        <span class="tech-name">AsyncIO</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-network-wired"></i>
+                        <span class="tech-name">Pydantic</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database & Storage -->
+            <div class="tech-category">
+                <h3 class="tech-category-title">
+                    <i class="fas fa-database"></i>
+                    Database & Storage
+                </h3>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-elephant"></i>
+                        <span class="tech-name">PostgreSQL 16</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-vector-square"></i>
+                        <span class="tech-name">pgvector</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-cubes"></i>
+                        <span class="tech-name">Embeddings OpenAI</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-search"></i>
+                        <span class="tech-name">IVFFlat Index</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-file-alt"></i>
+                        <span class="tech-name">Unstructured.io</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-link"></i>
+                        <span class="tech-name">AsyncPG</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frontend -->
+            <div class="tech-category">
+                <h3 class="tech-category-title">
+                    <i class="fas fa-palette"></i>
+                    Frontend & Design
+                </h3>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <i class="tech-icon fab fa-html5"></i>
+                        <span class="tech-name">HTML5</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fab fa-css3-alt"></i>
+                        <span class="tech-name">CSS3 Premium</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fab fa-js"></i>
+                        <span class="tech-name">JavaScript ES6+</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-chart-bar"></i>
+                        <span class="tech-name">Chart.js</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-font"></i>
+                        <span class="tech-name">Google Fonts Inter</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-icons"></i>
+                        <span class="tech-name">Font Awesome</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DevOps & Monitoring -->
+            <div class="tech-category">
+                <h3 class="tech-category-title">
+                    <i class="fas fa-cogs"></i>
+                    DevOps & Monitoring
+                </h3>
+                <div class="tech-items">
+                    <div class="tech-item">
+                        <i class="tech-icon fab fa-docker"></i>
+                        <span class="tech-name">Docker</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-code-branch"></i>
+                        <span class="tech-name">Git</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-tachometer-alt"></i>
+                        <span class="tech-name">Uvicorn</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-shield-alt"></i>
+                        <span class="tech-name">CORS Security</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-history"></i>
+                        <span class="tech-name">Logging Avançado</span>
+                    </div>
+                    <div class="tech-item">
+                        <i class="tech-icon fas fa-heartbeat"></i>
+                        <span class="tech-name">Health Checks</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ROI -->
+    <section class="roi" id="roi">
+        <div class="roi-container">
+            <div class="section-header">
+                <div class="section-badge">💎 Retorno sobre Investimento</div>
+                <h2 class="section-title">Potencial Real do Sistema MultiAgente</h2>
+                <p class="section-subtitle">
+                    Números do Neoson até agora.
+                </p>
+            </div>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-percentage">70%</div>
+                    <div class="roi-label">Potencial de Redução em Tickets de Suporte</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-percentage">50+</div>
+                    <div class="roi-label">Documentos de treinamento</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-percentage">$0,001</div>
+                    <div class="roi-label">Gasto por pergunta</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="final-cta">
+        <div class="final-cta-content">
+            <h2>Pronto para Revolucionar seu Atendimento?</h2>
+            <p>
+                Junte-se às empresas que já estão usando IA para transformar a experiência dos seus colaboradores.
+            </p>
+            <div class="hero-ctas">
+                <a href="/" class="primary-cta">
+                    <i class="fas fa-rocket"></i>
+                    Começar Agora
+                </a>
+                <a href="mailto:ti@straumann.com" class="secondary-cta">
+                    <i class="fas fa-envelope"></i>
+                    Falar com Especialista
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h3>NEOSON</h3>
+                <p>Sistema Multi-Agente de Inteligência Artificial desenvolvido para revolucionar o atendimento corporativo.</p>
+                <div class="footer-social">
+                    <a href="#" class="social-icon"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-github"></i></a>
+                    <a href="#" class="social-icon"><i class="fas fa-envelope"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-section">
+                <h4>Produto</h4>
+                <ul>
+                    <li><a href="#features">Funcionalidades</a></li>
+                    <li><a href="#agents">Agentes</a></li>
+                    <li><a href="/dashboard" target="_blank">Dashboard</a></li>
+                    <li><a href="/">Acessar Sistema</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Suporte</h4>
+                <ul>
+                    <li><a href="#">Documentação</a></li>
+                    <li><a href="#">API Reference</a></li>
+                    <li><a href="#">Status</a></li>
+                    <li><a href="#">Changelog</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2024 Neoson - Straumann Group. Desenvolvido com 💎 pela equipe de #TECH.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scroll para links internos
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

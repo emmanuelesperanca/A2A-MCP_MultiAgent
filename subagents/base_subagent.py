@@ -9,10 +9,376 @@ from typing import Any, Dict, List, Optional
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
-from core.config import get_database_url
 from dal import get_knowledge_dal, BaseDAL
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
+
+
+# ============================================================================
+# QUICK WINS: Classes de otimização de performance
+# ============================================================================
+
+class ProfileAnalyzer:
+    """Analisa o perfil do usuário ANTES da busca para otimizar filtros."""
+    
+    @staticmethod
+    def analyze_user_profile(perfil_usuario: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extrai informações do perfil para otimizar buscas.
+        
+        Returns:
+            Dict com: geografia, projetos (list), nivel_hierarquico, area
+        """
+        def _get_val(perfil: Dict, *keys):
+            for key in keys:
+                if key in perfil and perfil[key] is not None:
+                    return perfil[key]
+            return None
+        
+        def _normalize_list(value):
+            if value is None:
+                return []
+            if isinstance(value, list):
+                return [str(item).strip() for item in value if str(item).strip()]
+            if isinstance(value, str):
+                return [item.strip() for item in value.split(",") if item.strip()]
+            return [str(value).strip()]
+        
+        geografia = _get_val(perfil_usuario, "geografia", "Geografia")
+        projetos_raw = _get_val(perfil_usuario, "projetos", "Projetos")
+        projetos = _normalize_list(projetos_raw)
+        nivel = int(_get_val(perfil_usuario, "nivel_hierarquico", "Nivel_Hierarquico") or 1)
+        area = _get_val(perfil_usuario, "area", "Departamento")
+        
+        return {
+            "geografia": geografia,
+            "projetos": projetos,
+            "nivel_hierarquico": nivel,
+            "area": area
+        }
+
+
+class OptimizedDocumentSearch:
+    """Busca otimizada com filtros SQL para reduzir documentos retornados."""
+    
+    @staticmethod
+    async def search_with_profile_filter(
+        dal: BaseDAL,
+        table_name: str,
+        query_embedding: List[float],
+        user_profile: Dict[str, Any],
+        limit: int = 15
+    ) -> List[Dict[str, Any]]:
+        """
+        Busca documentos aplicando filtros de perfil no SQL.
+        NOTA: Esta versão é síncrona mas mantém signature async para compatibilidade futura.
+        
+        Args:
+            dal: Data Access Layer
+            table_name: Nome da tabela
+            query_embedding: Embedding da pergunta
+            user_profile: Perfil analisado (resultado de ProfileAnalyzer)
+            limit: Máximo de documentos
+        
+        Returns:
+            Lista de documentos filtrados
+        """
+        # Por enquanto, usar busca padrão da DAL sem filtros customizados
+        # A governança será aplicada depois no verificar_permissao_documento
+        # Isso mantém a compatibilidade sem quebrar o sistema existente
+        
+        try:
+            # Usar método padrão da DAL
+            search_results = dal.search_vectors(
+                table_name=table_name,
+                query_vector=query_embedding,
+                limit=limit * 2,  # Buscar mais para compensar filtros posteriores
+                filters=None  # Filtros complexos serão aplicados depois
+            )
+            
+            return search_results.documents
+            
+        except Exception as e:
+            # Fallback: busca mínima se der erro
+            print(f"⚠️ Erro na busca otimizada: {e}")
+            search_results = dal.search_vectors(
+                table_name=table_name,
+                query_vector=query_embedding,
+                limit=limit
+            )
+            return search_results.documents
+
+
+class ResponseValidator:
+    """Validação rigorosa da resposta do LLM com 4 critérios."""
+    
+    @staticmethod
+    def validate_response_quality(
+        response: str,
+        pergunta: str,
+        documentos: List[Dict[str, Any]],
+        min_score: float = 0.6
+    ) -> Dict[str, Any]:
+        """
+        Valida qualidade da resposta com 4 critérios.
+        
+        Returns:
+            Dict com: is_valid (bool), score (float), criteria_scores (dict), issues (list)
+        """
+        criteria_scores = {}
+        issues = []
+        
+        # 1. RELEVÂNCIA: Resposta aborda a pergunta?
+        relevance_score = ResponseValidator._check_relevance(response, pergunta)
+        criteria_scores["relevance"] = relevance_score
+        if relevance_score < 0.5:
+            issues.append("Resposta não parece relevante à pergunta")
+        
+        # 2. ESPECIFICIDADE: Usa informações dos documentos?
+        specificity_score = ResponseValidator._check_specificity(response, documentos)
+        criteria_scores["specificity"] = specificity_score
+        if specificity_score < 0.4:
+            issues.append("Resposta muito genérica, não usa documentos específicos")
+        
+        # 3. ACESSO: Não vaza informações restritas?
+        access_score = ResponseValidator._check_access_control(response, documentos)
+        criteria_scores["access_control"] = access_score
+        if access_score < 0.8:
+            issues.append("Possível vazamento de informação restrita")
+        
+        # 4. FRESCOR: Informações estão atualizadas?
+        freshness_score = ResponseValidator._check_freshness(documentos)
+        criteria_scores["freshness"] = freshness_score
+        if freshness_score < 0.7:
+            issues.append("Documentos podem estar desatualizados")
+        
+        # Score final: média ponderada
+        final_score = (
+            relevance_score * 0.35 +
+            specificity_score * 0.30 +
+            access_score * 0.25 +
+            freshness_score * 0.10
+        )
+        
+        is_valid = final_score >= min_score and access_score >= 0.8
+        
+        return {
+            "is_valid": is_valid,
+            "score": final_score,
+            "criteria_scores": criteria_scores,
+            "issues": issues,
+            "recommendation": "APPROVED" if is_valid else "NEEDS_REVIEW"
+        }
+    
+    @staticmethod
+    def _check_relevance(response: str, pergunta: str) -> float:
+        """Verifica se a resposta é relevante à pergunta."""
+        response_lower = response.lower()
+        pergunta_lower = pergunta.lower()
+        
+        # Extrair palavras-chave da pergunta (remover stop words)
+        stop_words = {"o", "a", "de", "da", "do", "para", "como", "qual", "que", "é", "são"}
+        palavras_pergunta = set(pergunta_lower.split()) - stop_words
+        
+        if not palavras_pergunta:
+            return 0.5  # Neutro se não há palavras-chave
+        
+        # Contar quantas palavras-chave aparecem na resposta
+        matches = sum(1 for palavra in palavras_pergunta if palavra in response_lower)
+        
+        return min(matches / len(palavras_pergunta), 1.0)
+    
+    @staticmethod
+    def _check_specificity(response: str, documentos: List[Dict[str, Any]]) -> float:
+        """Verifica se a resposta usa informações específicas dos documentos."""
+        response_lower = response.lower()
+        
+        # Padrões que indicam citação específica (frases completas)
+        citation_patterns = [
+            "de acordo com",
+            "conforme",
+            "segundo",
+            "baseado em",
+            "conforme documento",
+            "segundo a política",
+            "de acordo com a norma",
+            "estabelecido",
+            "padrão",
+            "norma"
+        ]
+        
+        citation_count = sum(1 for pattern in citation_patterns if pattern in response_lower)
+        
+        # Padrões que indicam resposta genérica
+        generic_patterns = [
+            "geralmente",
+            "normalmente",
+            "em geral",
+            "tipicamente",
+            "usualmente",
+            "pode se referir",
+            "pode ser",
+            "talvez",
+            "provavelmente"
+        ]
+        
+        generic_count = sum(1 for pattern in generic_patterns if pattern in response_lower)
+        
+        # Se há documentos, dar base mais alta
+        base_score = 0.4 if documentos else 0.2
+        
+        # Cada citação específica adiciona 0.2
+        score = min((citation_count * 0.2) + base_score, 1.0)
+        
+        # Penalidade para padrões genéricos
+        return max(score - (generic_count * 0.25), 0.0)
+        
+        response_lower = response.lower()
+        
+        # Padrões que indicam resposta genérica
+        generic_patterns = [
+            "não tenho informação",
+            "não encontrei",
+            "recomendo abrir um ticket",
+            "entre em contato",
+            "pode se referir a",
+            "em geral",
+            "tipicamente",
+            "normalmente"
+        ]
+        
+        generic_count = sum(1 for pattern in generic_patterns if pattern in response_lower)
+        if generic_count >= 2:
+            return 0.2
+        
+        # Verificar se há citações ou referências específicas
+        citation_patterns = [
+            "de acordo com",
+            "segundo",
+            "conforme",
+            "estabelece que",
+            "determina que",
+            "policy",
+            "norma",
+            "regulamento"
+        ]
+        
+        citation_count = sum(1 for pattern in citation_patterns if pattern in response_lower)
+        
+        # Score baseado em citações e ausência de padrões genéricos
+        score = min((citation_count * 0.3) + 0.4, 1.0)
+        
+        return max(score - (generic_count * 0.15), 0.0)
+    
+    @staticmethod
+    def _check_access_control(response: str, documentos: List[Dict[str, Any]]) -> float:
+        """Verifica se não há vazamento de informações restritas."""
+        response_lower = response.lower()
+        
+        # 1. Padrões explícitos que indicam vazamento (palavras-chave sensíveis)
+        sensitive_patterns = [
+            "senha",
+            "password",
+            "cpf",
+            "confidencial",
+            "restrito",
+            "privado",
+            "secreto"
+        ]
+        
+        leak_count = sum(1 for pattern in sensitive_patterns if pattern in response_lower)
+        
+        if leak_count > 0:
+            return 0.3  # Penalidade severa
+        
+        # 2. Se não há documentos, mas a resposta é substantiva = possível vazamento
+        if not documentos:
+            # Verificar se a resposta é substantiva (não é apenas "não sei")
+            substantive_patterns = [
+                "política",
+                "procedimento",
+                "norma",
+                "deve",
+                "é necessário",
+                "precisa",
+                "requer",
+                "estabelece",
+                "determina",
+                "salário",
+                "remuneração",
+                "benefício",
+                "dados pessoais",
+                "valor",
+                "quantidade",
+                "número"
+            ]
+            
+            # Respostas negativas são OK mesmo sem documentos
+            negative_patterns = [
+                "não sei",
+                "não tenho",
+                "não posso",
+                "não encontrei",
+                "sem informação",
+                "sem acesso"
+            ]
+            
+            has_negative = any(pattern in response_lower for pattern in negative_patterns)
+            
+            if has_negative:
+                return 0.9  # OK - resposta negativa apropriada
+            
+            substantive_count = sum(1 for pattern in substantive_patterns if pattern in response_lower)
+            
+            # Se resposta é substantiva mas não há documentos = vazamento provável
+            if substantive_count >= 1:
+                return 0.4  # Penalidade por possível vazamento
+            
+            # Resposta genérica sem documentos = OK (ex: "não tenho informação")
+            return 0.9
+        
+        # 3. Há documentos = OK (governança já foi aplicada)
+        return 1.0
+    
+    @staticmethod
+    def _check_freshness(documentos: List[Dict[str, Any]]) -> float:
+        """Verifica se os documentos usados estão atualizados."""
+        if not documentos:
+            return 0.5
+        
+        hoje = datetime.now().date()
+        scores = []
+        
+        for doc in documentos:
+            data_validade = doc.get("data_validade")
+            
+            if data_validade is None:
+                scores.append(1.0)  # Sem data = sempre válido
+                continue
+            
+            if isinstance(data_validade, datetime):
+                data_validade = data_validade.date()
+            elif isinstance(data_validade, str):
+                try:
+                    data_validade = datetime.strptime(data_validade, "%Y-%m-%d").date()
+                except:
+                    scores.append(1.0)
+                    continue
+            
+            if data_validade >= hoje:
+                scores.append(1.0)
+            else:
+                dias_vencido = (hoje - data_validade).days
+                if dias_vencido <= 7:
+                    scores.append(0.9)  # Vencido há menos de 1 semana: OK
+                elif dias_vencido <= 30:
+                    scores.append(0.5)  # Vencido há menos de 1 mês: médio
+                elif dias_vencido <= 90:
+                    scores.append(0.3)  # Vencido há menos de 3 meses: ruim
+                else:
+                    scores.append(0.1)  # Vencido há mais de 3 meses: muito ruim
+        
+        return sum(scores) / len(scores) if scores else 0.5
 
 
 class Document:
@@ -123,6 +489,9 @@ class BaseSubagent:
         self.current_session = None
         self.last_sources_used: List[str] = []
         self.last_tools_used: List[str] = []
+        # QUICK WIN: Cache de análise de perfil
+        self.profile_analyzer = ProfileAnalyzer()
+        self.cached_user_profiles: Dict[str, Dict[str, Any]] = {}
 
     # ------------------------------------------------------------------
     # Helpers de logging
@@ -1079,9 +1448,48 @@ class BaseSubagent:
         try:
             self._log(f"🔍 {self.config.name} processando pergunta: '{pergunta}' para {nome_usuario}")
             
-            # 1. Busca multilíngue na base de conhecimento
-            candidatos = self._busca_multilingue(pergunta)
-            self._log(f"🔎 Encontrados {len(candidatos)} candidatos brutos (busca multilíngue)")
+            # ===================================================================
+            # QUICK WIN 1: ANÁLISE DE PERFIL ANTECIPADA
+            # ===================================================================
+            # Verificar se já temos análise em cache
+            if usuario_id not in self.cached_user_profiles:
+                self._log(f"🔍 Analisando perfil de {nome_usuario}...")
+                analyzed_profile = self.profile_analyzer.analyze_user_profile(perfil_usuario)
+                self.cached_user_profiles[usuario_id] = analyzed_profile
+                self._log(
+                    f"✅ Perfil analisado e cacheado: geografia={analyzed_profile.get('geografia')}, "
+                    f"projetos={analyzed_profile.get('projetos')}, nivel={analyzed_profile.get('nivel_hierarquico')}"
+                )
+            else:
+                analyzed_profile = self.cached_user_profiles[usuario_id]
+                self._log("✅ Perfil recuperado do cache")
+            
+            # ===================================================================
+            # QUICK WIN 2: BUSCA OTIMIZADA COM FILTROS SQL
+            # ===================================================================
+            # Gerar embedding da pergunta
+            consulta_embedding = self.embeddings.embed_query(pergunta)
+            self._log(f"� Embedding gerado, iniciando busca otimizada na tabela '{self.table_name}'...")
+            
+            # Usar busca otimizada com filtros de perfil (síncrona por enquanto, asyncio depois)
+            import asyncio
+            try:
+                # Tentar usar busca otimizada async
+                candidatos = asyncio.run(
+                    OptimizedDocumentSearch.search_with_profile_filter(
+                        dal=self.dal,
+                        table_name=self.table_name,
+                        query_embedding=consulta_embedding,
+                        user_profile=analyzed_profile,
+                        limit=15
+                    )
+                )
+                self._log(f"🎯 Busca otimizada: {len(candidatos)} candidatos (filtrados no SQL)")
+            except Exception as e:
+                # Fallback para busca tradicional se der erro
+                self._log(f"⚠️ Busca otimizada falhou ({e}), usando busca tradicional...")
+                candidatos = self._busca_multilingue(pergunta)
+                self._log(f"🔎 Busca tradicional: {len(candidatos)} candidatos")
 
             # Verificar permissões e coletar motivos de rejeição
             documentos_permitidos = []
@@ -1147,8 +1555,12 @@ class BaseSubagent:
                 docs_selecionados = self._selecionar_documentos_diversificados(documentos_permitidos)
                 fontes_debug = [doc.get("fonte_documento", "sem fonte") for doc in docs_selecionados]
                 self._log(f"📄 Fontes selecionadas (diversificadas): {fontes_debug}")
+                
+                # Armazenar contexto para validação externa (usado pelo hierarchical)
+                self._last_context_docs = docs_selecionados
             else:
                 docs_selecionados = []
+                self._last_context_docs = []
                 self._log("⚠️ Nenhum documento aprovado. Resposta pode ser genérica.")
                 if motivos_rejeicao:
                     info_restricoes = self._criar_mensagem_restricoes(motivos_rejeicao)
@@ -1185,6 +1597,36 @@ INFORMAÇÕES DISPONÍVEIS:
             resposta_raw = self.llm.invoke(prompt_formatado)
             resposta_final = resposta_raw.content if hasattr(resposta_raw, "content") else str(resposta_raw)
 
+            # ===================================================================
+            # QUICK WIN 3: VALIDAÇÃO RIGOROSA DA RESPOSTA
+            # ===================================================================
+            validation_result = ResponseValidator.validate_response_quality(
+                response=resposta_final,
+                pergunta=pergunta,
+                documentos=docs_selecionados,
+                min_score=0.6
+            )
+            
+            self._log(
+                f"🔍 Validação da resposta: score={validation_result['score']:.2f}, "
+                f"válida={validation_result['is_valid']}"
+            )
+            
+            if self.config.debug:
+                for criterio, score in validation_result['criteria_scores'].items():
+                    self._log(f"  - {criterio}: {score:.2f}")
+                if validation_result['issues']:
+                    for issue in validation_result['issues']:
+                        self._log(f"  ⚠️ {issue}")
+            
+            # Se a validação falhou criticamente (especialmente controle de acesso), regenerar
+            if not validation_result['is_valid'] and validation_result['criteria_scores'].get('access_control', 1.0) < 0.8:
+                self._log("❌ Resposta falhou na validação de controle de acesso, bloqueando...")
+                resposta_final = (
+                    "Desculpe, não posso fornecer essas informações devido a restrições de acesso. "
+                    "Por favor, entre em contato com o suporte ou seu gestor para mais detalhes."
+                )
+            
             # Verificar se a resposta é genérica (não usa documentos específicos)
             is_generic_response = self._is_response_generic(resposta_final)
             

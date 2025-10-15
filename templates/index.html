@@ -6,7 +6,7 @@
     <title>Neoson - Sistema Multi-Agente de IA</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style_neoson.css') }}">
+    <link rel="stylesheet" href="/static/style_neoson.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
@@ -45,6 +45,9 @@
                 <i class="fas fa-circle"></i>
                 <span>Sistema Pronto</span>
             </div>
+            <a href="/dashboard" target="_blank" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; transition: transform 0.2s;">
+                <i class="fas fa-chart-line"></i> Ver Dashboard Analytics
+            </a>
         </div>
     </div>
 
@@ -67,7 +70,7 @@
                 <div class="agent-card ti-coordinator" data-agent="ti-system">
                     <div class="agent-avatar ti-system">🎯</div>
                     <div class="agent-info">
-                        <h4>Sistema TI</h4>
+                        <h4>João</h4>
                         <p>Coordenador Hierárquico</p>
                         <div class="agent-status">
                             <i class="fas fa-check-circle"></i>
@@ -407,6 +410,6 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script_neoson.js') }}"></script>
+    <script src="/static/script_neoson.js?v=2025100902"></script>
 </body>
 </html>
