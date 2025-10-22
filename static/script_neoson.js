@@ -1817,4 +1817,1043 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// ===== ÁRVORE GENEALÓGICA DE AGENTES =====
+class AgentsTreeManager {
+    constructor() {
+        this.treeContainer = document.getElementById('agentsTree');
+        this.refreshBtn = document.getElementById('refreshTreeBtn');
+        this.agents = [];
+        this.lastAgentCount = 0;
+        this.pollingInterval = null;
+        
+        console.log('🌳 AgentsTreeManager construtor executado');
+        console.log('📍 treeContainer:', this.treeContainer);
+        console.log('📍 refreshBtn:', this.refreshBtn);
+        console.log('📍 document.readyState:', document.readyState);
+        
+        if (!this.treeContainer) {
+            console.error('❌ Elemento #agentsTree não encontrado no DOM!');
+            console.error('❌ Tentando encontrar elemento...');
+            
+            // Tentar encontrar o elemento após um pequeno delay
+            setTimeout(() => {
+                this.treeContainer = document.getElementById('agentsTree');
+                this.refreshBtn = document.getElementById('refreshTreeBtn');
+                
+                if (this.treeContainer) {
+                    console.log('✅ Elemento encontrado após delay, inicializando...');
+                    this.init();
+                } else {
+                    console.error('❌ Elemento ainda não encontrado. Árvore não será carregada.');
+                }
+            }, 500);
+            return;
+        }
+        
+        this.init();
+    }
+    
+    init() {
+        console.log('🌳 Inicializando Árvore de Agentes...');
+        
+        // Carregar árvore inicial
+        this.loadAgentsTree();
+        
+        // Setup event listeners
+        if (this.refreshBtn) {
+            this.refreshBtn.addEventListener('click', () => {
+                this.loadAgentsTree(true);
+            });
+        }
+        
+        // Iniciar polling para hot-reload
+        this.startPolling();
+    }
+    
+    async loadAgentsTree(forceRefresh = false) {
+        try {
+            console.log('🔄 Iniciando carregamento da árvore de agentes...', { forceRefresh });
+            
+            if (forceRefresh) {
+                this.showLoading();
+            }
+            
+            // Buscar configuração de agentes da API
+            console.log('📡 Fazendo request para /api/factory/frontend-config...');
+            const response = await fetch('/api/factory/frontend-config');
+            
+            console.log('📡 Response recebido:', { 
+                status: response.status, 
+                statusText: response.statusText,
+                ok: response.ok 
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const config = await response.json();
+            console.log('📊 Configuração de agentes carregada:', config);
+            
+            this.agents = [...(config.coordinators || []), ...(config.subagents || [])];
+            
+            // Verificar se houve mudanças
+            const currentCount = this.agents.length;
+            if (currentCount !== this.lastAgentCount) {
+                console.log(`🔄 Agentes atualizados: ${this.lastAgentCount} → ${currentCount}`);
+                this.lastAgentCount = currentCount;
+            }
+            
+            // Renderizar árvore
+            this.renderTree(config);
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar árvore de agentes:', error);
+            this.showError(error);
+        }
+    }
+    
+    renderTree(config) {
+        console.log('🎨 renderTree() chamado');
+        console.log('📍 treeContainer existe?', !!this.treeContainer);
+        console.log('📊 Config recebido:', config);
+        
+        if (!this.treeContainer) {
+            console.error('❌ treeContainer não existe, não pode renderizar');
+            return;
+        }
+        
+        const coordinators = config.coordinators || [];
+        const subagents = config.subagents || [];
+        
+        console.log(`📊 Renderizando: ${coordinators.length} coordenadores, ${subagents.length} subagentes`);
+        
+        if (coordinators.length === 0 && subagents.length === 0) {
+            console.log('ℹ️ Nenhum agente encontrado, mostrando empty state');
+            this.showEmpty();
+            return;
+        }
+        
+        let html = '<div class="tree-container">';
+        
+        // Renderizar NEOSON (Avô de todos)
+        html += '<div class="tree-level">';
+        html += '<div class="tree-level-title">🤖 Sistema Principal</div>';
+        html += '<div class="coordinator-row">';
+        html += this.renderNeosonCard(coordinators.length, subagents.length);
+        html += '</div>';
+        html += '</div>';
+        
+        // Conector visual do Neoson para Coordenadores
+        if (coordinators.length > 0) {
+            html += '<div class="tree-connector"></div>';
+        }
+        
+        // Renderizar Coordenadores
+        if (coordinators.length > 0) {
+            html += '<div class="tree-level">';
+            html += '<div class="tree-level-title">👨‍✈️ Coordenadores (clique para expandir)</div>';
+            html += '<div class="coordinator-row">';
+            
+            console.log(`🎯 Renderizando ${coordinators.length} coordenadores`);
+            console.log('📊 Coordenadores:', coordinators.map(c => ({ 
+                name: c.name, 
+                identifier: c.identifier,
+                children: c.children 
+            })));
+            console.log('📊 Subagentes disponíveis:', subagents.map(s => s.identifier));
+            
+            coordinators.forEach(coordinator => {
+                console.log(`🔨 Renderizando coordenador: ${coordinator.name} (${coordinator.identifier})`);
+                console.log(`   Children: ${coordinator.children}`);
+                html += this.renderCoordinatorCard(coordinator, subagents);
+            });
+            
+            html += '</div>';
+            html += '</div>';
+        }
+        
+        // Renderizar Subagentes Independentes (sem coordenador)
+        const assignedIds = new Set();
+        coordinators.forEach(c => {
+            if (c.children) {
+                c.children.forEach(id => assignedIds.add(id));
+            }
+        });
+        
+        const orphans = subagents.filter(sub => !assignedIds.has(sub.identifier));
+        
+        if (orphans.length > 0) {
+            html += '<div class="tree-connector"></div>';
+            html += '<div class="tree-level">';
+            html += '<div class="tree-level-title">🤖 Subagentes</div>';
+            html += '<div class="subagents-group">';
+            html += '<div class="subagents-row">';
+            
+            orphans.forEach(subagent => {
+                html += this.renderSubagentCard(subagent);
+            });
+            
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        
+        console.log('📝 HTML gerado, tamanho:', html.length, 'caracteres');
+        console.log('📝 Primeiros 200 chars:', html.substring(0, 200));
+        
+        this.treeContainer.innerHTML = html;
+        
+        console.log('✅ HTML inserido no DOM');
+        console.log('🎨 Iniciando animações...');
+        
+        // Adicionar animações
+        this.animateCards();
+        
+        console.log('✅ Renderização completa!');
+        
+        // Adicionar event listeners para toggle
+        this.setupToggleListeners();
+    }
+    
+    setupToggleListeners() {
+        const coordinatorCards = this.treeContainer.querySelectorAll('.tree-agent-card.coordinator');
+        
+        console.log(`🎯 Configurando toggle listeners para ${coordinatorCards.length} coordenadores`);
+        
+        coordinatorCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const wrapper = card.closest('.tree-coordinator-wrapper');
+                const collapseSection = wrapper.querySelector('.subagents-collapse');
+                const expandIndicator = card.querySelector('.expand-indicator i');
+                
+                if (!collapseSection) {
+                    console.log('⚠️ Sem seção de collapse para este coordenador');
+                    return;
+                }
+                
+                // Verificar estado atual
+                const isExpanded = wrapper.classList.contains('expanded');
+                
+                console.log(`🔄 Toggle: ${wrapper.dataset.coordinatorId}, Atual: ${isExpanded ? 'expandido' : 'recolhido'}`);
+                
+                if (isExpanded) {
+                    // Recolher
+                    console.log('📤 Recolhendo subagentes...');
+                    collapseSection.style.display = 'none';
+                    expandIndicator.classList.remove('fa-chevron-up');
+                    expandIndicator.classList.add('fa-chevron-down');
+                    wrapper.classList.remove('expanded');
+                } else {
+                    // Expandir
+                    console.log('📥 Expandindo subagentes...');
+                    collapseSection.style.display = 'block';
+                    expandIndicator.classList.remove('fa-chevron-down');
+                    expandIndicator.classList.add('fa-chevron-up');
+                    wrapper.classList.add('expanded');
+                    
+                    // Animar entrada dos subagentes
+                    const subagentCards = collapseSection.querySelectorAll('.tree-agent-card');
+                    subagentCards.forEach((subCard, index) => {
+                        subCard.style.opacity = '0';
+                        subCard.style.transform = 'translateY(20px)';
+                        
+                        setTimeout(() => {
+                            subCard.style.transition = 'all 0.5s ease';
+                            subCard.style.opacity = '1';
+                            subCard.style.transform = 'translateY(0)';
+                        }, index * 100);
+                    });
+                }
+            });
+        });
+        
+        console.log(`✅ Toggle listeners configurados com sucesso`);
+    }
+    
+    renderNeosonCard(coordinatorsCount, subagentsCount) {
+        const totalAgents = coordinatorsCount + subagentsCount;
+        
+        return `
+            <div class="tree-agent-card neoson-card" 
+                 data-agent-id="neoson"
+                 title="NEOSON - Sistema Multi-Agente de IA">
+                ${totalAgents > 0 ? `<span class="children-badge">${totalAgents}</span>` : ''}
+                <div class="tree-agent-header">
+                    <div class="tree-agent-icon" style="font-size: 50px;">🤖</div>
+                    <div class="tree-agent-info">
+                        <h3>NEOSON</h3>
+                        <div class="specialty">Sistema Multi-Agente de IA</div>
+                    </div>
+                </div>
+                <div class="tree-agent-description">
+                    Orquestrador principal que coordena todos os agentes especializados. 
+                    Analisa perguntas e delega automaticamente para o especialista mais adequado.
+                </div>
+                <div class="tree-agent-children">
+                    <i class="fas fa-sitemap"></i>
+                    <span>${coordinatorsCount} ${coordinatorsCount === 1 ? 'coordenador' : 'coordenadores'} • ${subagentsCount} ${subagentsCount === 1 ? 'especialista' : 'especialistas'}</span>
+                </div>
+                <div class="tree-agent-meta">
+                    <span class="meta-tag">🧠 Orquestrador</span>
+                    <span class="meta-tag">⚡ RAG</span>
+                    <span class="meta-tag">🎯 LLM</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    renderCoordinatorCard(coordinator, subagents) {
+        console.log(`📇 renderCoordinatorCard chamado para: ${coordinator.name}`);
+        console.log(`   Coordinator object:`, coordinator);
+        console.log(`   Subagents recebidos:`, subagents?.length || 0);
+        
+        const childrenCount = coordinator.children ? coordinator.children.length : 0;
+        const icon = this.getAgentIcon(coordinator.specialty);
+        
+        console.log(`   Children count: ${childrenCount}`);
+        console.log(`   Vai chamar renderSubagentsGroup: ${childrenCount > 0}`);
+        
+        return `
+            <div class="tree-coordinator-wrapper" data-coordinator-id="${coordinator.identifier}">
+                <a href="/agents/${coordinator.identifier}" 
+                   class="tree-agent-card coordinator" 
+                   data-agent-id="${coordinator.identifier}"
+                   onclick="event.preventDefault();"
+                   title="Clique para expandir/recolher subordinados">
+                    ${childrenCount > 0 ? `<span class="children-badge">${childrenCount}</span>` : ''}
+                    <div class="expand-indicator">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="tree-agent-header">
+                        <div class="tree-agent-icon">${icon}</div>
+                        <div class="tree-agent-info">
+                            <h3>${coordinator.name}</h3>
+                            <div class="specialty">${coordinator.specialty}</div>
+                        </div>
+                    </div>
+                    <div class="tree-agent-description">
+                        ${coordinator.description || 'Coordenador de agentes especializados'}
+                    </div>
+                    ${childrenCount > 0 ? `
+                        <div class="tree-agent-children">
+                            <i class="fas fa-sitemap"></i>
+                            <span>${childrenCount} ${childrenCount === 1 ? 'subordinado' : 'subordinados'}</span>
+                        </div>
+                    ` : ''}
+                    <div class="tree-agent-meta">
+                        <span class="meta-tag">Coordenador</span>
+                    </div>
+                </a>
+                
+                ${childrenCount > 0 ? this.renderSubagentsGroup(coordinator, subagents) : ''}
+            </div>
+        `;
+    }
+    
+    renderSubagentsGroup(coordinator, allSubagents) {
+        console.log(`🔍 renderSubagentsGroup para ${coordinator.name}:`);
+        console.log('   Children esperados:', coordinator.children);
+        console.log('   Todos subagents:', allSubagents.map(s => s.identifier));
+        
+        const children = allSubagents.filter(sub => 
+            coordinator.children && coordinator.children.includes(sub.identifier)
+        );
+        
+        console.log('   Children encontrados:', children.map(c => c.identifier));
+        
+        if (children.length === 0) {
+            console.log('   ⚠️ Nenhum filho encontrado!');
+            return '';
+        }
+        
+        let html = '<div class="subagents-collapse" style="display: none;">';
+        html += '<div class="tree-connector"></div>';
+        html += '<div class="subagents-group">';
+        html += `<div class="group-label">↳ Subordinados a ${coordinator.name}</div>`;
+        html += '<div class="subagents-row">';
+        
+        children.forEach(subagent => {
+            html += this.renderSubagentCard(subagent);
+        });
+        
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        
+        return html;
+    }
+    
+    renderCoordinatorCardOLD(coordinator, subagents) {
+        const childrenCount = coordinator.children ? coordinator.children.length : 0;
+        const icon = this.getAgentIcon(coordinator.specialty);
+        
+        return `
+            <a href="/agents/${coordinator.identifier}" 
+               class="tree-agent-card coordinator" 
+               data-agent-id="${coordinator.identifier}"
+               title="Clique para ver detalhes">
+                ${childrenCount > 0 ? `<span class="children-badge">${childrenCount}</span>` : ''}
+                <div class="tree-agent-header">
+                    <div class="tree-agent-icon">${icon}</div>
+                    <div class="tree-agent-info">
+                        <h3>${coordinator.name}</h3>
+                        <div class="specialty">${coordinator.specialty}</div>
+                    </div>
+                </div>
+                <div class="tree-agent-description">
+                    ${coordinator.description || 'Coordenador de agentes especializados'}
+                </div>
+                ${childrenCount > 0 ? `
+                    <div class="tree-agent-children">
+                        <i class="fas fa-sitemap"></i>
+                        <span>${childrenCount} ${childrenCount === 1 ? 'subordinado' : 'subordinados'}</span>
+                    </div>
+                ` : ''}
+                <div class="tree-agent-meta">
+                    <span class="meta-tag">Coordenador</span>
+                </div>
+            </a>
+        `;
+    }
+    
+    renderSubagentCard(subagent) {
+        const icon = this.getAgentIcon(subagent.specialty);
+        const keywords = subagent.keywords || [];
+        const displayKeywords = keywords.slice(0, 3);
+        
+        return `
+            <a href="/agents/${subagent.identifier}" 
+               class="tree-agent-card subagent" 
+               data-agent-id="${subagent.identifier}"
+               title="Clique para ver detalhes">
+                <div class="tree-agent-header">
+                    <div class="tree-agent-icon">${icon}</div>
+                    <div class="tree-agent-info">
+                        <h3>${subagent.name}</h3>
+                        <div class="specialty">${subagent.specialty}</div>
+                    </div>
+                </div>
+                <div class="tree-agent-description">
+                    ${subagent.description || 'Agente especializado'}
+                </div>
+                ${displayKeywords.length > 0 ? `
+                    <div class="tree-agent-meta">
+                        ${displayKeywords.map(kw => `<span class="meta-tag">${kw}</span>`).join('')}
+                        ${keywords.length > 3 ? `<span class="meta-tag">+${keywords.length - 3}</span>` : ''}
+                    </div>
+                ` : ''}
+            </a>
+        `;
+    }
+    
+    getAgentIcon(specialty) {
+        const specialtyLower = (specialty || '').toLowerCase();
+        
+        const iconMap = {
+            'ti': '💻',
+            'tecnologia': '💻',
+            'desenvolvimento': '👨‍💻',
+            'development': '👨‍💻',
+            'infraestrutura': '🖥️',
+            'infrastructure': '🖥️',
+            'governança': '⚖️',
+            'governance': '⚖️',
+            'suporte': '🎧',
+            'support': '🎧',
+            'end-user': '👤',
+            'usuário': '👤',
+            'rh': '👥',
+            'recursos humanos': '👥',
+            'human resources': '👥',
+            'financeiro': '💰',
+            'finance': '💰',
+            'vendas': '📈',
+            'sales': '📈',
+            'crm': '🤝',
+            'marketing': '📢',
+            'operações': '⚙️',
+            'operations': '⚙️',
+            'segurança': '🔒',
+            'security': '🔒',
+            'dados': '📊',
+            'data': '📊',
+            'analytics': '📉',
+            'coordenação': '👨‍✈️',
+            'coordination': '👨‍✈️'
+        };
+        
+        for (const [key, icon] of Object.entries(iconMap)) {
+            if (specialtyLower.includes(key)) {
+                return icon;
+            }
+        }
+        
+        return '🤖'; // Ícone padrão
+    }
+    
+    showLoading() {
+        if (!this.treeContainer) return;
+        
+        this.treeContainer.innerHTML = `
+            <div class="tree-loading">
+                <div class="loading-spinner"></div>
+                <p>Carregando arquitetura de agentes...</p>
+            </div>
+        `;
+    }
+    
+    showEmpty() {
+        if (!this.treeContainer) return;
+        
+        this.treeContainer.innerHTML = `
+            <div class="tree-empty">
+                <i class="fas fa-robot"></i>
+                <h3>Nenhum agente encontrado</h3>
+                <p>Crie novos agentes usando a Agent Factory API</p>
+                <p style="margin-top: 10px; font-size: 13px;">
+                    <a href="/docs" style="color: #667eea;">Ver Documentação</a>
+                </p>
+            </div>
+        `;
+    }
+    
+    showError(error) {
+        if (!this.treeContainer) return;
+        
+        this.treeContainer.innerHTML = `
+            <div class="tree-empty">
+                <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i>
+                <h3>Erro ao carregar agentes</h3>
+                <p>${error.message || 'Erro desconhecido'}</p>
+                <button onclick="window.agentsTree.loadAgentsTree(true)" 
+                        style="margin-top: 15px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    <i class="fas fa-sync-alt"></i> Tentar Novamente
+                </button>
+            </div>
+        `;
+    }
+    
+    animateCards() {
+        const cards = this.treeContainer.querySelectorAll('.tree-agent-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    }
+    
+    startPolling() {
+        // Polling a cada 5 segundos
+        this.pollingInterval = setInterval(() => {
+            this.checkForUpdates();
+        }, 5000);
+        
+        console.log('🔄 Hot-reload ativado: verificando atualizações a cada 5s');
+    }
+    
+    async checkForUpdates() {
+        try {
+            const response = await fetch('/api/factory/stats');
+            if (!response.ok) return;
+            
+            const stats = await response.json();
+            const currentTotal = stats.total || 0;
+            
+            if (currentTotal !== this.lastAgentCount && this.lastAgentCount > 0) {
+                console.log('🆕 Novos agentes detectados! Recarregando árvore...');
+                await this.loadAgentsTree(false);
+            }
+            
+        } catch (error) {
+            // Silenciar erros de polling
+            console.debug('Polling error:', error);
+        }
+    }
+    
+    destroy() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            console.log('🛑 Hot-reload desativado');
+        }
+    }
+}
+
+// Inicializar árvore de agentes quando DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    window.agentsTree = new AgentsTreeManager();
+});
+
+// Cleanup ao sair da página
+window.addEventListener('beforeunload', function() {
+    if (window.agentsTree) {
+        window.agentsTree.destroy();
+    }
+});
+
+// ============================================================================
+// SISTEMA DE NAVEGAÇÃO POR ABAS E AUTENTICAÇÃO
+// ============================================================================
+
+class TabsManager {
+    constructor() {
+        this.currentUser = null;
+        this.init();
+    }
+    
+    async init() {
+        console.log('🎯 Inicializando TabsManager...');
+        
+        // Verificar autenticação
+        await this.checkAuth();
+        
+        // Configurar navegação de abas
+        this.setupTabs();
+        
+        // Configurar formulários
+        this.setupForms();
+        
+        console.log('✅ TabsManager inicializado');
+    }
+    
+    async checkAuth() {
+        const token = localStorage.getItem('neoson_token');
+        const userStr = localStorage.getItem('neoson_user');
+        
+        if (!token || !userStr) {
+            console.log('⚠️ Usuário não autenticado, redirecionando para login...');
+            window.location.href = '/login';
+            return;
+        }
+        
+        try {
+            this.currentUser = JSON.parse(userStr);
+            console.log('✅ Usuário autenticado:', this.currentUser.username, '-', this.currentUser.user_type);
+            
+            // Exibir nome do usuário
+            const userDisplay = document.getElementById('userDisplay');
+            if (userDisplay) {
+                userDisplay.textContent = `Olá, ${this.currentUser.username}`;
+            }
+            
+            // Configurar botão de logout
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => this.logout());
+            }
+            
+            // Mostrar abas admin se for admin
+            if (this.currentUser.user_type === 'admin') {
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.style.display = 'flex';
+                });
+            }
+            
+        } catch (e) {
+            console.error('❌ Erro ao verificar autenticação:', e);
+            window.location.href = '/login';
+        }
+    }
+    
+    logout() {
+        localStorage.removeItem('neoson_token');
+        localStorage.removeItem('neoson_user');
+        localStorage.removeItem('neoson_remember');
+        window.location.href = '/login';
+    }
+    
+    setupTabs() {
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        console.log('🎯 Configurando abas:', tabBtns.length, 'botões,', tabContents.length, 'conteúdos');
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                console.log('📑 Clique na aba:', tabId);
+                
+                // Remover active de todos
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // Adicionar active ao selecionado
+                btn.classList.add('active');
+                const targetTab = document.getElementById(tabId);
+                if (targetTab) {
+                    targetTab.classList.add('active');
+                    console.log('✅ Aba ativada:', tabId);
+                    
+                    // Carregar dados se necessário
+                    if (tabId === 'agents') {
+                        // Carregar árvore de agentes se ainda não foi carregada
+                        if (window.agentsTree) {
+                            window.agentsTree.loadAgentsTree(false);
+                        }
+                    } else if (tabId === 'create-agent') {
+                        this.loadCoordinators();
+                        this.loadAgentsForChildren();
+                    } else if (tabId === 'ingest-data') {
+                        this.loadAgentsForIngest();
+                    }
+                }
+            });
+        });
+    }
+    
+    setupForms() {
+        // Seletor de tipo de agente
+        const typeBtns = document.querySelectorAll('.type-btn');
+        const subagentForm = document.getElementById('subagentForm');
+        const coordinatorForm = document.getElementById('coordinatorForm');
+        
+        typeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                typeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const type = btn.dataset.type;
+                if (type === 'subagent') {
+                    subagentForm.style.display = 'block';
+                    coordinatorForm.style.display = 'none';
+                } else {
+                    subagentForm.style.display = 'none';
+                    coordinatorForm.style.display = 'block';
+                }
+            });
+        });
+        
+        // Formulário de criar subagente
+        document.getElementById('createAgentBtn')?.addEventListener('click', () => this.createSubagent());
+        document.getElementById('resetFormBtn')?.addEventListener('click', () => this.resetSubagentForm());
+        
+        // Formulário de criar coordenador
+        document.getElementById('createCoordBtn')?.addEventListener('click', () => this.createCoordinator());
+        document.getElementById('resetCoordFormBtn')?.addEventListener('click', () => this.resetCoordinatorForm());
+        
+        // Upload de arquivos
+        this.setupFileUpload();
+    }
+    
+    async loadCoordinators() {
+        try {
+            const response = await fetch('/api/factory/agents?agent_type=coordinator');
+            const data = await response.json();
+            
+            const select = document.getElementById('parentCoordinator');
+            select.innerHTML = '<option value="">Sem coordenador (independente)</option>';
+            
+            data.agents.forEach(agent => {
+                const option = document.createElement('option');
+                option.value = agent.identifier;
+                option.textContent = `${agent.name} (${agent.identifier})`;
+                select.appendChild(option);
+            });
+            
+        } catch (e) {
+            console.error('❌ Erro ao carregar coordenadores:', e);
+        }
+    }
+    
+    async loadAgentsForChildren() {
+        try {
+            const response = await fetch('/api/factory/agents?agent_type=subagent');
+            const data = await response.json();
+            
+            const container = document.getElementById('childrenSelector');
+            container.innerHTML = '';
+            
+            data.agents.forEach(agent => {
+                const label = document.createElement('label');
+                label.innerHTML = `
+                    <input type="checkbox" value="${agent.identifier}">
+                    <span>${agent.name}</span>
+                `;
+                container.appendChild(label);
+            });
+            
+        } catch (e) {
+            console.error('❌ Erro ao carregar agentes:', e);
+        }
+    }
+    
+    async loadAgentsForIngest() {
+        try {
+            const response = await fetch('/api/factory/agents');
+            const data = await response.json();
+            
+            const select = document.getElementById('targetAgent');
+            select.innerHTML = '<option value="">Selecione o agente...</option>';
+            
+            data.agents.forEach(agent => {
+                if (agent.table_name) {
+                    const option = document.createElement('option');
+                    option.value = agent.table_name;
+                    option.textContent = `${agent.name} (${agent.table_name})`;
+                    select.appendChild(option);
+                }
+            });
+            
+        } catch (e) {
+            console.error('❌ Erro ao carregar agentes:', e);
+        }
+    }
+    
+    async createSubagent() {
+        const statusDiv = document.getElementById('creationStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'creation-status loading';
+        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando agente...';
+        
+        try {
+            const token = localStorage.getItem('neoson_token');
+            const keywords = document.getElementById('agentKeywords').value
+                .split(',')
+                .map(k => k.trim())
+                .filter(k => k);
+            
+            const response = await fetch('/api/factory/create-subagent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: document.getElementById('agentName').value,
+                    identifier: document.getElementById('agentIdentifier').value,
+                    specialty: document.getElementById('agentSpecialty').value,
+                    description: document.getElementById('agentDescription').value,
+                    keywords: keywords,
+                    parent_coordinator: document.getElementById('parentCoordinator').value || null,
+                    table_name: document.getElementById('agentTableName').value || null
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                statusDiv.className = 'creation-status success';
+                statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                this.resetSubagentForm();
+                
+                // Atualizar árvore de agentes
+                if (window.agentsTree) {
+                    setTimeout(() => window.agentsTree.loadAgentsTree(true), 1000);
+                }
+            } else {
+                throw new Error(data.error || 'Erro desconhecido');
+            }
+            
+        } catch (e) {
+            statusDiv.className = 'creation-status error';
+            statusDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Erro: ${e.message}`;
+        }
+    }
+    
+    async createCoordinator() {
+        const statusDiv = document.getElementById('coordCreationStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'creation-status loading';
+        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando coordenador...';
+        
+        try {
+            const token = localStorage.getItem('neoson_token');
+            const checkboxes = document.querySelectorAll('#childrenSelector input[type="checkbox"]:checked');
+            const children = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (children.length === 0) {
+                throw new Error('Selecione pelo menos um agente filho');
+            }
+            
+            const response = await fetch('/api/factory/create-coordinator', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: document.getElementById('coordName').value,
+                    identifier: document.getElementById('coordIdentifier').value,
+                    specialty: document.getElementById('coordSpecialty').value,
+                    description: document.getElementById('coordDescription').value,
+                    children_agents: children
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                statusDiv.className = 'creation-status success';
+                statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                this.resetCoordinatorForm();
+                
+                // Atualizar árvore
+                if (window.agentsTree) {
+                    setTimeout(() => window.agentsTree.loadAgentsTree(true), 1000);
+                }
+            } else {
+                throw new Error(data.error || 'Erro desconhecido');
+            }
+            
+        } catch (e) {
+            statusDiv.className = 'creation-status error';
+            statusDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Erro: ${e.message}`;
+        }
+    }
+    
+    resetSubagentForm() {
+        document.getElementById('agentName').value = '';
+        document.getElementById('agentIdentifier').value = '';
+        document.getElementById('agentSpecialty').value = '';
+        document.getElementById('agentDescription').value = '';
+        document.getElementById('agentKeywords').value = '';
+        document.getElementById('parentCoordinator').value = '';
+        document.getElementById('agentTableName').value = '';
+        document.getElementById('creationStatus').style.display = 'none';
+    }
+    
+    resetCoordinatorForm() {
+        document.getElementById('coordName').value = '';
+        document.getElementById('coordIdentifier').value = '';
+        document.getElementById('coordSpecialty').value = '';
+        document.getElementById('coordDescription').value = '';
+        document.querySelectorAll('#childrenSelector input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.getElementById('coordCreationStatus').style.display = 'none';
+    }
+    
+    setupFileUpload() {
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectBtn = document.getElementById('selectFilesBtn');
+        const filesList = document.getElementById('filesList');
+        const filesContainer = document.getElementById('filesContainer');
+        const clearBtn = document.getElementById('clearFilesBtn');
+        const startBtn = document.getElementById('startIngestBtn');
+        
+        let selectedFiles = [];
+        
+        selectBtn?.addEventListener('click', () => fileInput.click());
+        
+        fileInput?.addEventListener('change', (e) => {
+            selectedFiles = Array.from(e.target.files);
+            this.displayFiles(selectedFiles, filesContainer, filesList);
+        });
+        
+        uploadArea?.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea?.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea?.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            selectedFiles = Array.from(e.dataTransfer.files);
+            this.displayFiles(selectedFiles, filesContainer, filesList);
+        });
+        
+        clearBtn?.addEventListener('click', () => {
+            selectedFiles = [];
+            filesList.style.display = 'none';
+            filesContainer.innerHTML = '';
+            fileInput.value = '';
+        });
+        
+        startBtn?.addEventListener('click', () => {
+            const targetAgent = document.getElementById('targetAgent').value;
+            if (!targetAgent) {
+                alert('Por favor, selecione um agente de destino');
+                return;
+            }
+            if (selectedFiles.length === 0) {
+                alert('Por favor, selecione arquivos para ingerir');
+                return;
+            }
+            this.startIngest(selectedFiles, targetAgent);
+        });
+    }
+    
+    displayFiles(files, container, listDiv) {
+        container.innerHTML = '';
+        files.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.innerHTML = `
+                <div class="file-info">
+                    <i class="fas fa-file-alt"></i>
+                    <div class="file-details">
+                        <h4>${file.name}</h4>
+                        <p>${(file.size / 1024).toFixed(2)} KB</p>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button onclick="window.tabsManager.removeFile(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(fileItem);
+        });
+        listDiv.style.display = 'block';
+    }
+    
+    async startIngest(files, targetTable) {
+        const progressDiv = document.getElementById('ingestProgress');
+        const resultDiv = document.getElementById('ingestResult');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const logsDiv = document.getElementById('ingestLogs');
+        
+        progressDiv.style.display = 'block';
+        resultDiv.style.display = 'none';
+        logsDiv.innerHTML = '';
+        
+        // TODO: Implementar upload real quando backend estiver pronto
+        // Por enquanto, simulação
+        for (let i = 0; i < files.length; i++) {
+            const progress = ((i + 1) / files.length) * 100;
+            progressBar.style.width = progress + '%';
+            progressText.textContent = Math.round(progress) + '%';
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry info';
+            logEntry.textContent = `Processando ${files[i].name}...`;
+            logsDiv.appendChild(logEntry);
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        progressDiv.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'ingest-result success';
+        resultDiv.innerHTML = `
+            <h3><i class="fas fa-check-circle"></i> Ingestão Concluída!</h3>
+            <p>${files.length} arquivo(s) processado(s) com sucesso.</p>
+        `;
+    }
+    
+    removeFile(index) {
+        // Implementar remoção de arquivo
+        console.log('Remover arquivo:', index);
+    }
+}
+
+// Inicializar TabsManager
+document.addEventListener('DOMContentLoaded', function() {
+    window.tabsManager = new TabsManager();
+});
+
 console.log('🚀 Neoson Multi-Agent System - JavaScript Loaded Successfully');

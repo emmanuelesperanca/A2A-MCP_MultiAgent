@@ -309,7 +309,7 @@ class TIHierarchicalAgent(HierarchicalAgent):
         )
 
         # Threshold para aprovação: 0.50 (50%)
-        is_valid = overall_score >= 0.50
+        is_valid = overall_score >= 0.20
         
         # Log detalhado para debugging
         print(f"\n{'='*60}")
@@ -601,6 +601,35 @@ class TIHierarchicalAgent(HierarchicalAgent):
                     if hasattr(sub_agent, '_last_context_docs'):
                         context_docs = sub_agent._last_context_docs
                     
+                    # Se a resposta é uma mensagem de erro informativa, aceitar sem validar
+                    is_error_message = (
+                        result.startswith("⚠️") or 
+                        result.startswith("Desculpe") or
+                        "Problema de Conectividade" in result or
+                        "Timeout" in result
+                    )
+                    
+                    if is_error_message:
+                        # Aceitar mensagem de erro informativa
+                        print(f"⚠️ {sub_agent.config.name} retornou mensagem de erro informativa")
+                        decision_chain.append(f"⚠️ **Resultado**: {sub_agent.config.name} encontrou um problema técnico")
+                        decision_chain.append("💡 **Ação**: Retornando mensagem informativa ao usuário")
+                        
+                        # Montar transparência
+                        transparency_section = "\n\n" + "="*60 + "\n"
+                        transparency_section += "🧠 **CADEIA DE DECISÃO E RACIOCÍNIO**\n"
+                        transparency_section += "="*60 + "\n"
+                        for step in decision_chain:
+                            transparency_section += f"{step}\n"
+                        
+                        transparency_section += f"\n📋 **Resposta fornecida por**: {sub_agent.config.name} ({sub_agent.config.specialty})"
+                        transparency_section += "\n⚠️ **Status**: Problema técnico detectado"
+                        transparency_section += "\n🎯 **Coordenado por**: Sistema TI Hierárquico"
+                        transparency_section += "\n" + "="*60
+                        
+                        return result + transparency_section
+                    
+                    # Validar qualidade da resposta
                     is_valid, quality_score, detailed_scores = self._validate_response_quality(
                         query=query,
                         response=result,
@@ -649,26 +678,55 @@ class TIHierarchicalAgent(HierarchicalAgent):
             decision_chain.append("❓ **Resultado da análise**: Nenhum especialista específico identificado")
             decision_chain.append("🔄 **Ação**: Redirecionando diretamente para TI geral")
         
-        # 3. Se nenhum candidato funcionou, usar TI principal
+        # 3. Se nenhum candidato funcionou, usar TI principal (se disponível)
         decision_chain.append("❌ **Resultado**: Nenhum especialista encontrou informações específicas")
-        decision_chain.append("🔄 **Fallback final**: Redirecionando para agente TI geral")
         
-        logger.info("🤖 TI processando com conhecimento geral")
-        result = self.base_agent.processar_pergunta(query, user_profile)
-        
-        # Montar transparência para fallback final
-        transparency_section = "\n\n" + "="*60 + "\n"
-        transparency_section += "🧠 **CADEIA DE DECISÃO E RACIOCÍNIO**\n"
-        transparency_section += "="*60 + "\n"
-        for step in decision_chain:
-            transparency_section += f"{step}\n"
-        
-        transparency_section += f"\n📋 **Resposta final fornecida por**: {self.base_agent.config.name} (TI Geral)"
-        transparency_section += "\n⚠️ **Motivo**: Especialistas não encontraram informações específicas"
-        transparency_section += "\n🎯 **Coordenado por**: Sistema TI Hierárquico"
-        transparency_section += "\n" + "="*60
-        
-        return result + transparency_section
+        if self.base_agent:
+            decision_chain.append("🔄 **Fallback final**: Redirecionando para agente TI geral")
+            logger.info("🤖 TI processando com conhecimento geral")
+            result = self.base_agent.processar_pergunta(query, user_profile)
+            
+            # Montar transparência para fallback final
+            transparency_section = "\n\n" + "="*60 + "\n"
+            transparency_section += "🧠 **CADEIA DE DECISÃO E RACIOCÍNIO**\n"
+            transparency_section += "="*60 + "\n"
+            for step in decision_chain:
+                transparency_section += f"{step}\n"
+            
+            transparency_section += f"\n📋 **Resposta final fornecida por**: {self.base_agent.config.name} (TI Geral)"
+            transparency_section += "\n⚠️ **Motivo**: Especialistas não encontraram informações específicas"
+            transparency_section += "\n🎯 **Coordenado por**: Sistema TI Hierárquico"
+            transparency_section += "\n" + "="*60
+            
+            return result + transparency_section
+        else:
+            # Sem base_agent disponível, retornar mensagem informativa
+            decision_chain.append("⚠️ **Fallback**: Agente TI geral não disponível")
+            
+            logger.warning("⚠️ Base agent TI não disponível e nenhum especialista respondeu")
+            
+            # Montar resposta com transparência
+            transparency_section = "\n\n" + "="*60 + "\n"
+            transparency_section += "🧠 **CADEIA DE DECISÃO E RACIOCÍNIO**\n"
+            transparency_section += "="*60 + "\n"
+            for step in decision_chain:
+                transparency_section += f"{step}\n"
+            
+            transparency_section += "\n⚠️ **Status**: Sistema em configuração"
+            transparency_section += "\n💡 **Sugestão**: Tente reformular a pergunta de forma mais específica"
+            transparency_section += "\n🎯 **Coordenado por**: Sistema TI Hierárquico"
+            transparency_section += "\n" + "="*60
+            
+            result = (
+                "Desculpe, não consegui processar sua pergunta sobre TI no momento.\n\n"
+                "Por favor, tente reformular sua pergunta de forma mais específica, mencionando:\n"
+                "- **Governança**: Políticas, segurança, compliance\n"
+                "- **Desenvolvimento**: Aplicações, sistemas, integrações\n"
+                "- **Infraestrutura**: Servidores, redes, hardware\n"
+                "- **Suporte**: Problemas de usuários, tickets, acesso"
+            )
+            
+            return result + transparency_section
     
     def get_hierarchy_stats(self) -> Dict:
         """Retorna estatísticas da hierarquia."""

@@ -48,12 +48,19 @@ class PostgresDALAsync:
             safe_url = f"{parsed_url.hostname}:{parsed_url.port}/{parsed_url.path.lstrip('/')}"
             self.logger.info(f"📡 Conectando em (ASYNC): {safe_url}")
             
-            # Criar conexão assíncrona
-            self._connection = await asyncpg.connect(self.connection_string)
+            # Criar conexão assíncrona com timeout de 10 segundos
+            import asyncio
+            self._connection = await asyncio.wait_for(
+                asyncpg.connect(self.connection_string),
+                timeout=10.0
+            )
             
             self.logger.info("✅ Conexão PostgreSQL assíncrona estabelecida com sucesso")
             return True
             
+        except asyncio.TimeoutError:
+            self.logger.error(f"❌ Timeout ao conectar PostgreSQL (>10s) - Verifique conectividade de rede")
+            raise DALException("Timeout na conexão com banco de dados (>10s). Verifique VPN/rede.", None)
         except asyncpg.PostgresError as e:
             self.logger.error(f"❌ Erro ao conectar PostgreSQL (ASYNC): {e}")
             raise DALException(f"Falha na conexão PostgreSQL: {e}", e)

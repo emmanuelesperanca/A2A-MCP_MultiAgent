@@ -3,413 +3,4107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neoson - Sistema Multi-Agente de IA</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style_neoson.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <title>Neoson - Sistema Multi-Agente IA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Highlight.js para syntax highlighting de código -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    
+    <link rel="stylesheet" href="/static/factory.css?v=1.1.3">
+    <style>
+        /* Faixa Alpha - Em Desenvolvimento */
+        .alpha-banner {
+            position: fixed;
+            top: 24px;
+            right: -80px;
+            z-index: 9999;
+            width: 340px;
+            height: 48px;
+            background: repeating-linear-gradient(135deg, #9e8712 0 20px, #222 20px 40px);
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+            line-height: 48px;
+            transform: rotate(20deg);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+            border-radius: 8px;
+            letter-spacing: 1px;
+            border: 2px solid #222;
+            pointer-events: none;
+        }
+        /* ============================================================================
+           🎨 NEOSON DESIGN SYSTEM - VARIÁVEIS CSS
+           Modifique aqui para personalizar toda a aplicação
+        ============================================================================ */
+        :root {
+            /* === PALETA DE CORES === */
+            --color-primary: #75246a;
+            --color-secondary: #47ad8a;
+            --color-accent: #833178;
+            
+            /* === GRADIENTE DE FUNDO === */
+            --gradient-bg: linear-gradient(90deg, #75246a 0%, #47ad8a 100%);
+            
+            /* === SIDEBAR === */
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 60px;
+            --sidebar-bg: rgba(0, 0, 0, 0.25);
+            --sidebar-border: rgba(255, 255, 255, 0.15);
+            --sidebar-item-hover: rgba(255, 255, 255, 0.1);
+            --sidebar-item-active: rgba(255, 255, 255, 0.2);
+            
+            /* === CHAT === */
+            --chat-max-width: 800px;
+            --message-user-bg: rgba(255, 255, 255, 0.15);
+            --message-assistant-bg: rgba(0, 0, 0, 0.15);
+            --message-border-radius: 16px;
+            
+            /* === INPUT === */
+            --input-bg: rgba(255, 255, 255, 0.95);
+            --input-border: rgba(255, 255, 255, 0.3);
+            --input-radius: 24px;
+            --input-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+            
+            /* === BOTÕES === */
+            --btn-primary-bg: #ffffff;
+            --btn-primary-text: #75246a;
+            --btn-hover-shadow: 0 4px 12px rgba(117, 36, 106, 0.3);
+            
+            /* === TEXTO === */
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.85);
+            --text-muted: rgba(255, 255, 255, 0.6);
+            --text-on-white: #333333;
+            
+            /* === TRANSIÇÕES === */
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+            --transition-slow: 0.5s ease;
+            
+            /* === ESPAÇAMENTOS === */
+            --spacing-xs: 8px;
+            --spacing-sm: 12px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 60px;
+            
+            /* === SOMBRAS === */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ============================================================================
+           🔄 RESET E BASE
+        ============================================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gradient-bg);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* ============================================================================
+           📐 LAYOUT PRINCIPAL
+        ============================================================================ */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* ============================================================================
+           🎨 SIDEBAR
+        ============================================================================ */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            transition: width var(--transition-normal);
+            position: relative;
+            z-index: 100;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        /* === HEADER DO SIDEBAR === */
+        .sidebar-header {
+            padding: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--sidebar-border);
+            min-height: 80px;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 1;
+            transition: opacity var(--transition-fast);
+        }
+
+        .sidebar.collapsed .logo-text {
+            opacity: 0;
+            width: 0;
+        }
+
+        .sidebar-toggle {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: var(--spacing-xs);
+            border-radius: 8px;
+            transition: all var(--transition-fast);
+            flex-shrink: 0;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--sidebar-item-hover);
+        }
+
+        /* === BOTÃO NOVO CHAT === */
+        .new-chat-btn {
+            margin: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            transition: all var(--transition-fast);
+            font-size: 14px;
+        }
+
+        .new-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--btn-hover-shadow);
+        }
+
+        .sidebar.collapsed .new-chat-btn {
+            padding: var(--spacing-md) var(--spacing-sm);
+            justify-content: center;
+        }
+
+        .btn-text {
+            opacity: 1;
+            transition: opacity var(--transition-fast);
+        }
+
+        .sidebar.collapsed .btn-text {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+
+        /* === NAVEGAÇÃO === */
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-md);
+            transition: all 0.3s ease;
+        }
+
+        /* Quando o dropdown estiver ativo, comprimir a nav para dar espaço */
+        .sidebar:has(.user-profile-dropdown.active) .sidebar-nav {
+            flex: 0 1 auto;
+            max-height: calc(100vh - 80px - 60px - 80px - 400px); /* header + new-chat + footer + dropdown + margens */
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .nav-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: var(--spacing-sm) var(--spacing-md);
+            opacity: 1;
+            transition: opacity var(--transition-fast);
+        }
+
+        .sidebar.collapsed .nav-section-title {
+            opacity: 0;
+            height: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .nav-item {
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-xs);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            color: var(--text-secondary);
+        }
+
+        .nav-item:hover {
+            background: var(--sidebar-item-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--sidebar-item-active);
+            color: var(--text-primary);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .nav-item-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: 1;
+            transition: opacity var(--transition-fast);
+        }
+
+        .sidebar.collapsed .nav-item-text {
+            opacity: 0;
+            width: 0;
+        }
+
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+        }
+
+        /* === FOOTER DO SIDEBAR === */
+        .sidebar-footer {
+            position: relative;
+            padding: var(--spacing-lg);
+            border-top: 1px solid var(--sidebar-border);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 
+                background var(--transition-fast),
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .user-profile:hover {
+            background: var(--sidebar-item-hover);
+        }
+
+        /* Esconder user-profile quando dropdown estiver aberto */
+        .user-profile-dropdown.active ~ .user-profile,
+        .sidebar-footer:has(.user-profile-dropdown.active) .user-profile {
+            opacity: 0;
+            pointer-events: none;
+            max-height: 0;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gradient-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            flex: 1;
+            overflow: hidden;
+            opacity: 1;
+            transition: opacity var(--transition-fast);
+        }
+
+        .sidebar.collapsed .user-info {
+            opacity: 0;
+            width: 0;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* === DROPDOWN DO PERFIL === */
+        .user-profile-dropdown {
+            position: absolute;
+            top: 10px; /* Começa no topo do footer */
+            left: 10px;
+            right: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            
+            /* Estado inicial: completamente escondido */
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-20px) scale(0.95);
+            pointer-events: none;
+            
+            /* Transição suave ao fechar */
+            transition: 
+                opacity 0.25s cubic-bezier(0.4, 0, 0.6, 1),
+                transform 0.25s cubic-bezier(0.4, 0, 0.6, 1),
+                visibility 0s linear 0.25s;
+        }
+
+        .user-profile-dropdown.active {
+            /* Estado aberto: totalmente visível */
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+            
+            /* Transição suave ao abrir */
+            transition: 
+                opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0s linear 0s;
+        }
+
+        .sidebar.collapsed .user-profile-dropdown {
+            left: 10px;
+            right: auto;
+            width: 280px;
+        }
+
+        .dropdown-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--card-border);
+            flex-shrink: 0;
+        }
+
+        .dropdown-user-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        /* Wrapper interno com altura fixa para animação suave */
+        .user-profile-dropdown > * {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        
+        .user-profile-dropdown:not(.active) > * {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        .dropdown-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--gradient-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 20px;
+        }
+
+        .dropdown-user-details {
+            flex: 1;
+        }
+
+        .dropdown-user-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .dropdown-user-email {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .dropdown-body {
+            padding: var(--spacing-md);
+            max-height: 250px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Estilizar scrollbar do dropdown-body */
+        .dropdown-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dropdown-body::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .dropdown-body::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+        .dropdown-body::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-hover);
+        }
+
+        .profile-info-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .profile-info-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .profile-info-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .profile-info-value i {
+            margin-right: 8px;
+            color: var(--primary-color);
+            width: 16px;
+            text-align: center;
+        }
+
+        .dropdown-footer {
+            padding: var(--spacing-md);
+            border-top: 1px solid var(--card-border);
+        }
+
+        .dropdown-logout-btn {
+            width: 100%;
+            padding: var(--spacing-md);
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .dropdown-logout-btn:hover {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: rgba(244, 67, 54, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .dropdown-logout-btn i {
+            font-size: 16px;
+        }
+
+        /* ============================================================================
+           🌳 ÁRVORE DE AGENTES
+        ============================================================================ */
+        .agents-tree-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: var(--spacing-xl);
+            background: var(--bg-primary);
+        }
+
+        .agents-tree-view.active {
+            display: block;
+        }
+
+        .tree-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .tree-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            background-clip: text;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .tree-header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .tree-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tree-level {
+            margin-bottom: var(--spacing-xxl);
+            position: relative;
+        }
+
+        .tree-level-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+            text-align: center;
+        }
+
+        .tree-connector {
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(180deg, var(--primary-color), var(--accent-color));
+            margin: 0 auto var(--spacing-lg);
+            position: relative;
+        }
+
+        .tree-connector::before,
+        .tree-connector::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+        }
+
+        .tree-connector::before {
+            top: 0;
+        }
+
+        .tree-connector::after {
+            bottom: 0;
+            background: var(--accent-color);
+        }
+
+        /* Cards dos Agentes */
+        .agent-tree-card {
+            border: 1px solid rgba(255, 255, 255, 1);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            transition: all var(--transition-normal);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-tree-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+
+        .agent-tree-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary-color);
+        }
+
+        .agent-tree-card:hover::before {
+            opacity: 1;
+        }
+
+        .agent-card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .agent-tree-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--radius-lg);
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .agent-tree-card.neoson .agent-tree-icon {
+            width: 80px;
+            height: 80px;
+            font-size: 36px;
+        }
+
+        .agent-tree-info {
+            flex: 1;
+        }
+
+        .agent-tree-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .agent-tree-card.neoson .agent-tree-name {
+            font-size: 24px;
+        }
+
+        .agent-tree-specialty {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .agent-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .agent-type-badge.orquestrador {
+            background: rgba(124, 58, 237, 0.2);
+            color: var(--primary-color);
+        }
+
+        .agent-type-badge.coordenador {
+            background: rgba(79, 209, 197, 0.2);
+            color: var(--accent-color);
+        }
+
+        .agent-type-badge.subagente {
+            background: rgba(156, 163, 175, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .agent-tree-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .agent-tree-stats {
+            display: flex;
+            gap: var(--spacing-lg);
+            flex-wrap: wrap;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .agent-tree-stat {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .agent-tree-stat i {
+            color: var(--primary-color);
+        }
+
+        .agent-tree-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-xs);
+        }
+
+        .tree-keyword-tag {
+            padding: 4px 10px;
+            background: rgba(124, 58, 237, 0.1);
+            color: var(--primary-color);
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Subagentes Expansíveis */
+        .coordinator-wrapper {
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-lg);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+        }
+
+        .coordinator-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .toggle-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-md);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-normal);
+            position: absolute;
+            right: var(--spacing-lg);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+
+        .toggle-icon i {
+            transition: transform var(--transition-normal);
+            color: var(--btn-primary-bg);
+        }
+
+        .coordinator-wrapper.expanded .toggle-icon i {
+            transform: rotate(180deg);
+        }
+
+        .subagents-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+            margin-top: var(--spacing-lg);
+            padding-left: var(--spacing-xl);
+            border-left: 2px solid var(--border-subtle);
+        }
+
+        .coordinator-wrapper.expanded .subagents-container {
+            max-height: 5000px;
+        }
+
+        .subagents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg) 0;
+        }
+
+        /* Loading State */
+        .tree-loading {
+            text-align: center;
+            padding: var(--spacing-xxl);
+        }
+
+        .tree-loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border-subtle);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--spacing-md);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tree-loading-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Empty State */
+        .tree-empty {
+            text-align: center;
+            padding: var(--spacing-xxl);
+        }
+
+        .tree-empty-icon {
+            font-size: 64px;
+            margin-bottom: var(--spacing-lg);
+            opacity: 0.3;
+        }
+
+        .tree-empty-text {
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        /* Modal para Detalhes do Agente */
+        .agent-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-lg);
+        }
+
+        .agent-modal.active {
+            display: flex;
+        }
+
+        .agent-modal-content {
+            background: var(--card-bg);
+            border-radius: var(--radius-xl);
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .agent-modal-header {
+            padding: var(--spacing-xl);
+            background: var(--gradient-primary);
+            color: white;
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            position: relative;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: var(--spacing-lg);
+            right: var(--spacing-lg);
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .modal-close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .agent-modal-body {
+            padding: var(--spacing-xl);
+        }
+
+        .modal-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .modal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .modal-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .modal-info-item {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+        }
+
+        .modal-info-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            margin-bottom: var(--spacing-xs);
+            font-weight: 600;
+        }
+
+        .modal-info-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .modal-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            padding: var(--spacing-xl);
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+        }
+
+        .modal-btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .modal-btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+        }
+
+        .modal-btn-secondary:hover {
+            background: var(--bg-secondary);
+        }
+
+        /* ============================================================================
+           ⚙️ PÁGINA DE PREFERÊNCIAS
+        ============================================================================ */
+        .preferences-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            background: var(--bg-primary);
+        }
+
+        .preferences-view.active {
+            display: block;
+        }
+
+        .preferences-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+        }
+
+        .preferences-header {
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 2px solid var(--border-subtle);
+        }
+
+        .preferences-title-section h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-md);
+        }
+
+        .preferences-title-section p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            text-align: center;
+        }
+
+        .dev-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            background: rgba(255, 152, 0, 0.15);
+            color: #ff9800;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        .preferences-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xl);
+        }
+
+        .preferences-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: var(--spacing-xl);
+        }
+
+        .section-header {
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .section-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .section-header h2 i {
+            color: var(--primary-color);
+        }
+
+        .section-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-lg);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .form-group label i {
+            color: var(--primary-color);
+            width: 16px;
+            text-align: center;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            transition: all var(--transition-fast);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(117, 36, 106, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-group small {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .preferences-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+            padding-top: var(--spacing-lg);
+        }
+
+        .pref-btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            border: none;
+        }
+
+        .pref-btn-primary {
+            background: var(--gradient-bg);
+            color: white;
+        }
+
+        .pref-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(117, 36, 106, 0.3);
+        }
+
+        .pref-btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+        }
+
+        .pref-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dev-warning {
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid rgba(255, 152, 0, 0.3);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: flex-start;
+        }
+
+        .dev-warning i {
+            color: #ff9800;
+            font-size: 24px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .dev-warning strong {
+            color: #ff9800;
+            display: block;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .dev-warning p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preferences-actions {
+                flex-direction: column;
+            }
+
+            .pref-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* ============================================================================
+           � PÁGINA DE BASE DE CONHECIMENTO
+        ============================================================================ */
+        .knowledge-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            background: var(--bg-primary);
+        }
+
+        .knowledge-view.active {
+            display: block;
+        }
+
+        .knowledge-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+        }
+
+        .knowledge-header {
+            align-items: center;
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 2px solid var(--border-subtle);
+        }
+
+        .knowledge-title-section h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-md);
+        }
+
+        .knowledge-title-section p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .knowledge-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xl);
+        }
+
+        .knowledge-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: var(--spacing-xl);
+            border: 1px solid rgba(255, 255, 255, 1);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--card-border);
+            border-radius: 12px;
+            padding: var(--spacing-xl);
+            text-align: center;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(117, 36, 106, 0.05);
+        }
+
+        .upload-area.drag-over {
+            border-color: var(--primary-color);
+            background: rgba(117, 36, 106, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-area i {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .upload-area p {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .upload-btn {
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            transition: all var(--transition-fast);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(117, 36, 106, 0.3);
+        }
+
+        /* Selected Files */
+        .selected-files {
+            margin-top: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--gradient-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .file-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .file-remove {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .file-remove:hover {
+            background: rgba(244, 67, 54, 0.2);
+        }
+
+        /* Log Container */
+        .log-container {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: var(--spacing-lg);
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .log-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+        }
+
+        .log-placeholder i {
+            font-size: 32px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .log-entry {
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-secondary);
+        }
+
+        .log-entry.success {
+            color: #4caf50;
+        }
+
+        .log-entry.error {
+            color: #f44336;
+        }
+
+        .log-entry.warning {
+            color: #ff9800;
+        }
+
+        .log-entry.info {
+            color: #2196f3;
+        }
+
+        /* Checkbox Group */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* Actions */
+        .knowledge-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+        }
+
+        .knowledge-btn {
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            border: none;
+        }
+
+        .knowledge-btn-primary {
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
+        }
+
+        .knowledge-btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(117, 36, 106, 0.3);
+        }
+
+        .knowledge-btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .knowledge-btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+        }
+
+        .knowledge-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Status de Ingestão */
+        .ingestion-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            min-width: 300px;
+            z-index: 1000;
+        }
+
+        .status-content {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .status-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(117, 36, 106, 0.2);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-text {
+            flex: 1;
+        }
+
+        .status-text strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .status-text p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .knowledge-actions {
+                flex-direction: column;
+            }
+
+            .knowledge-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* ============================================================================
+           �💬 ÁREA PRINCIPAL DE CHAT
+        ============================================================================ */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* === HEADER DO CHAT === */
+        .chat-header {
+            padding: var(--spacing-lg) var(--spacing-xl);
+            background: rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: 14px;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* === ÁREA DE MENSAGENS === */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-xl);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages-container {
+            max-width: var(--chat-max-width);
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* === TELA INICIAL (SEM MENSAGENS) === */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            opacity: 1;
+            transition: opacity var(--transition-slow);
+        }
+
+        .welcome-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+        }
+
+        .welcome-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            background: white;
+            padding: 10px;
+        }
+
+        .welcome-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .welcome-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .welcome-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+            max-width: 600px;
+        }
+
+        .welcome-suggestions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-md);
+            width: 100%;
+            max-width: 800px;
+            margin-top: var(--spacing-xl);
+        }
+
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-align: left;
+        }
+
+        .suggestion-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .suggestion-icon {
+            font-size: 24px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .suggestion-text {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* === MENSAGENS === */
+        .message {
+            margin-bottom: var(--spacing-lg);
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-assistant {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--message-border-radius);
+            line-height: 1.6;
+        }
+
+        .message-user .message-content {
+            background: var(--message-user-bg);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-assistant .message-content {
+            background: var(--message-assistant-bg);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            margin-bottom: var(--spacing-xs);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* ============================================================================
+           📝 MARKDOWN FORMATTING
+        ============================================================================ */
+        
+        .message-text h1,
+        .message-text h2,
+        .message-text h3,
+        .message-text h4,
+        .message-text h5,
+        .message-text h6 {
+            margin: 1em 0 0.5em 0;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .message-text h1 { font-size: 1.8em; border-bottom: 2px solid var(--border-color); padding-bottom: 0.3em; }
+        .message-text h2 { font-size: 1.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
+        .message-text h3 { font-size: 1.3em; }
+        .message-text h4 { font-size: 1.1em; }
+        .message-text h5 { font-size: 1em; }
+        .message-text h6 { font-size: 0.9em; color: var(--text-muted); }
+
+        .message-text p {
+            margin: 0.8em 0;
+        }
+
+        .message-text ul,
+        .message-text ol {
+            margin: 0.8em 0;
+            padding-left: 2em;
+        }
+
+        .message-text li {
+            margin: 0.4em 0;
+        }
+
+        .message-text ul li {
+            list-style-type: disc;
+        }
+
+        .message-text ol li {
+            list-style-type: decimal;
+        }
+
+        .message-text blockquote {
+            margin: 1em 0;
+            padding: 0.5em 1em;
+            border-left: 4px solid var(--color-primary);
+            background: rgba(117, 36, 106, 0.05);
+            font-style: italic;
+        }
+
+        .message-text a {
+            color: var(--color-primary);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .message-text a:hover {
+            border-bottom-color: var(--color-primary);
+        }
+
+        .message-text strong {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .message-text em {
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+
+        .message-text code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            padding: 2px 6px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .message-text pre {
+            margin: 1em 0;
+            padding: 0;
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-text pre code {
+            display: block;
+            padding: 1em;
+            background: transparent;
+            border: none;
+            font-size: 0.9em;
+            line-height: 1.5;
+            color: #d4d4d4;
+            overflow-x: auto;
+        }
+
+        .message-text table {
+            margin: 1em 0;
+            border-collapse: collapse;
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .message-text table thead {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .message-text table th,
+        .message-text table td {
+            padding: 0.75em 1em;
+            text-align: left;
+            border: 1px solid var(--border-color);
+        }
+
+        .message-text table tbody tr:hover {
+            background: rgba(117, 36, 106, 0.05);
+        }
+
+        .message-text hr {
+            margin: 1.5em 0;
+            border: none;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .message-text img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1em 0;
+        }
+
+        /* Code block copy button */
+        .message-text pre {
+            position: relative;
+        }
+
+        .message-text .code-copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+
+        .message-text pre:hover .code-copy-btn {
+            opacity: 1;
+        }
+
+        .message-text .code-copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: var(--spacing-md);
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-8px);
+            }
+        }
+
+        /* === ÁREA DE INPUT === */
+        .chat-input-container {
+            padding: var(--spacing-xl);
+            display: flex;
+            justify-content: center;
+            position: relative;
+            transition: all var(--transition-slow);
+        }
+
+        /* Estado inicial: centralizado verticalmente */
+        .chat-input-container.centered {
+            top: -45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - var(--sidebar-width));
+            max-width: var(--chat-max-width);
+        }
+
+        /* Estado com mensagens: parte inferior */
+        .chat-input-container.bottom {
+            position: static;
+            transform: none;
+        }
+
+        .input-wrapper {
+            width: 100%;
+            max-width: var(--chat-max-width);
+            margin: 0 auto;
+            background: var(--input-bg);
+            border-radius: var(--input-radius);
+            box-shadow: var(--input-shadow);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            transition: all var(--transition-fast);
+        }
+
+        .input-wrapper:focus-within {
+            box-shadow: 0 4px 32px rgba(0, 0, 0, 0.25);
+        }
+
+        #messageInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: var(--spacing-md);
+            font-size: 15px;
+            color: var(--text-on-white);
+            resize: none;
+            max-height: 200px;
+            min-height: 24px;
+            font-family: inherit;
+        }
+
+        #messageInput::placeholder {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        .input-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+            align-items: center;
+        }
+
+        .input-btn {
+            background: transparent;
+            border: none;
+            color: var(--color-accent);
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            border-radius: 8px;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-btn:hover {
+            background: rgba(117, 36, 106, 0.1);
+        }
+
+        .send-btn {
+            background: var(--color-primary);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--color-accent);
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ============================================================================
+           📱 RESPONSIVIDADE
+        ============================================================================ */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                z-index: 1000;
+                height: 100vh;
+            }
+
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+
+            .chat-input-container.centered {
+                width: calc(100% - 40px);
+            }
+
+            .welcome-suggestions {
+                grid-template-columns: 1fr;
+            }
+
+            .message-content {
+                max-width: 90%;
+            }
+        }
+
+        /* ============================================================================
+           🎨 SCROLLBAR CUSTOMIZADA
+        ============================================================================ */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ============================================================================
+           🎭 UTILITÁRIOS
+        ============================================================================ */
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+    </style>
 </head>
 <body>
-    <!-- Cabeçalho do Neoson -->
-    <div class="neoson-header">
-        <div class="neoson-face">
-            <div class="neoson-antenna">
-                <div class="antenna-ball"></div>
-            </div>
-            <div class="neoson-eyes">
-                <div class="eye left-eye">
-                    <div class="pupil left-pupil"></div>
-                    <div class="eye-shine"></div>
+    <div class="alpha-banner">Versão Alpha - Em Desenvolvimento</div>
+    <div class="app-container">
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Header -->
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <img src="/static/assets/logo.png" alt="Neoson Logo">
+                    </div>
+                    <span class="logo-text">Neoson</span>
                 </div>
-                <div class="eye right-eye">
-                    <div class="pupil right-pupil"></div>
-                    <div class="eye-shine"></div>
-                </div>
-            </div>
-            <div class="neoson-mouth">
-                <div class="mouth-line"></div>
-            </div>
-            <div class="thinking-indicator">
-                <div class="thinking-dot"></div>
-                <div class="thinking-dot"></div>
-                <div class="thinking-dot"></div>
-            </div>
-        </div>
-        
-        <div class="neoson-info">
-            <h1 class="neoson-name">NEOSON</h1>
-            <p class="neoson-subtitle">Sistema Multi-Agente de Inteligência Artificial</p>
-            <div class="status-indicator ready">
-                <i class="fas fa-circle"></i>
-                <span>Sistema Pronto</span>
-            </div>
-            <a href="/dashboard" target="_blank" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; transition: transform 0.2s;">
-                <i class="fas fa-chart-line"></i> Ver Dashboard Analytics
-            </a>
-        </div>
-    </div>
-
-    <!-- Agentes Especializados -->
-    <div class="container">
-        <div class="agents-panel">
-            <h3><i class="fas fa-users"></i> Agentes Especializados</h3>
-            <div class="agents-grid">
-                <div class="agent-card" data-agent="ana">
-                    <div class="agent-avatar ana">👩‍💼</div>
-                    <div class="agent-info">
-                        <h4>Ana</h4>
-                        <p>Especialista em RH</p>
-                        <div class="agent-status">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="agent-card ti-coordinator" data-agent="ti-system">
-                    <div class="agent-avatar ti-system">🎯</div>
-                    <div class="agent-info">
-                        <h4>João</h4>
-                        <p>Coordenador Hierárquico</p>
-                        <div class="agent-status">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                    </div>
-                    <div class="sub-agents-indicator">
-                        <span>4 sub-especialistas</span>
-                    </div>
-                </div>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Recolher sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
 
-            <!-- Sub-agentes TI -->
-            <div class="sub-agents-section">
-                <h4><i class="fas fa-sitemap"></i> Sub-especialistas TI</h4>
-                <div class="sub-agents-grid">
-                    <div class="sub-agent-card" data-subagent="governance">
-                        <div class="sub-agent-avatar governance">🏛️</div>
-                        <div class="sub-agent-info">
-                            <h5>Ariel</h5>
-                            <p>Governança TI</p>
-                            <span class="expertise">LGPD, Compliance, Delivery Methods</span>
-                            <div class="sub-agent-status">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Novo Chat -->
+            <button class="new-chat-btn" id="newChatBtn" onclick="startNewChat()">
+                <i class="fas fa-plus"></i>
+                <span class="btn-text">Nova Conversa</span>
+            </button>
 
-                    <div class="sub-agent-card" data-subagent="infrastructure">
-                        <div class="sub-agent-avatar infrastructure">�️</div>
-                        <div class="sub-agent-info">
-                            <h5>Alice</h5>
-                            <p>Infraestrutura</p>
-                            <span class="expertise">Servidores, Redes, Monitoramento</span>
-                            <div class="sub-agent-status">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="sub-agent-card" data-subagent="development">
-                        <div class="sub-agent-avatar development">⚡</div>
-                        <div class="sub-agent-info">
-                            <h5>Carlos</h5>
-                            <p>Desenvolvimento</p>
-                            <span class="expertise">APIs, Deploy, Arquitetura</span>
-                            <div class="sub-agent-status">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="sub-agent-card" data-subagent="enduser">
-                        <div class="sub-agent-avatar enduser">🎧</div>
-                        <div class="sub-agent-info">
-                            <h5>Marina</h5>
-                            <p>Usuário Final</p>
-                            <span class="expertise">Senhas, Acessos, Suporte</span>
-                            <div class="sub-agent-status">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Persona Selection -->
-            <div class="persona-section">
-                <h2><i class="fas fa-user-tag"></i> Selecione ou Crie seu Perfil</h2>
-                
-                <!-- Botões de Alternância -->
-                <div class="persona-toggle">
-                    <button class="toggle-btn active" id="presetToggle">
-                        <i class="fas fa-users"></i> Perfis Pré-definidos
-                    </button>
-                    <button class="toggle-btn" id="customToggle">
-                        <i class="fas fa-user-plus"></i> Criar Persona Personalizada
-                    </button>
-                </div>
-
-                <!-- Perfis Pré-definidos -->
-                <div class="persona-grid" id="presetPersonas">
-                    <div class="persona-card selected" data-persona="Gerente">
-                        <div class="persona-header">
-                            <div class="persona-avatar gerente">👨‍💼</div>
-                            <div>
-                                <div class="persona-name">Gerente</div>
-                                <div class="persona-role">Liderança • Nível 3</div>
-                            </div>
-                        </div>
-                        <div class="persona-details">
-                            Perfil de gerência com acesso a informações estratégicas e dados de equipe.
-                        </div>
-                    </div>
-                    
-                    <div class="persona-card" data-persona="Funcionário">
-                        <div class="persona-header">
-                            <div class="persona-avatar funcionario">👨‍💻</div>
-                            <div>
-                                <div class="persona-name">Funcionário</div>
-                                <div class="persona-role">Operacional • Nível 2</div>
-                            </div>
-                        </div>
-                        <div class="persona-details">
-                            Perfil operacional com acesso a informações básicas e procedimentos padrão.
-                        </div>
-                    </div>
-
-                    <div class="persona-card" data-persona="Diretor">
-                        <div class="persona-header">
-                            <div class="persona-avatar diretor">👔</div>
-                            <div>
-                                <div class="persona-name">Diretor</div>
-                                <div class="persona-role">Executivo • Nível 5</div>
-                            </div>
-                        </div>
-                        <div class="persona-details">
-                            Perfil executivo com acesso total a informações estratégicas e confidenciais.
-                        </div>
+            <!-- Navegação -->
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Recentes</div>
+                    <div class="nav-item active" onclick="showTab('chat')">
+                        <i class="fas fa-message"></i>
+                        <span class="nav-item-text">Conversa Atual</span>
                     </div>
                 </div>
 
-                <!-- Criador de Persona Personalizada -->
-                <div class="custom-persona-creator" id="customPersonaCreator" style="display: none;">
-                    <div class="creator-grid">
-                        <div class="creator-section">
-                            <h3><i class="fas fa-user"></i> Informações Pessoais</h3>
-                            <div class="form-group">
-                                <label for="customName">Nome Completo</label>
-                                <input type="text" id="customName" placeholder="Ex: João Silva">
-                            </div>
-                            <div class="form-group">
-                                <label for="customRole">Cargo</label>
-                                <input type="text" id="customRole" placeholder="Ex: Analista de Sistemas">
-                            </div>
-                        </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Ferramentas</div>
+                    <div class="nav-item" onclick="showTab('agents')">
+                        <i class="fas fa-sitemap"></i>
+                        <span class="nav-item-text">Árvore de Agentes</span>
+                    </div>
+                    <div class="nav-item" onclick="showTab('knowledge')">
+                        <i class="fas fa-book"></i>
+                        <span class="nav-item-text">Base de Conhecimento</span>
+                    </div>
+                    <div class="nav-item" onclick="showTab('factory')">
+                        <i class="fas fa-industry" title="Fábrica"></i>
+                        <span class="nav-item-text">Fábrica de Agentes</span>
+                    </div>
+                </div>
 
-                        <div class="creator-section">
-                            <h3><i class="fas fa-building"></i> Informações Organizacionais</h3>
-                            <div class="form-group">
-                                <label for="customDepartment">Departamento</label>
-                                <select id="customDepartment">
-                                    <option value="">Selecione...</option>
-                                    <option value="RH">Recursos Humanos</option>
-                                    <option value="TI">Tecnologia da Informação</option>
-                                    <option value="Marketing">Marketing</option>
-                                    <option value="Vendas">Vendas</option>
-                                    <option value="Financeiro">Financeiro</option>
-                                    <option value="Operações">Operações</option>
-                                    <option value="Jurídico">Jurídico</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="customLevel">Nível Hierárquico</label>
-                                <select id="customLevel">
-                                    <option value="">Selecione...</option>
-                                    <option value="1">Nível 1 - Estagiário</option>
-                                    <option value="2">Nível 2 - Junior</option>
-                                    <option value="3">Nível 3 - Pleno/Supervisor</option>
-                                    <option value="4">Nível 4 - Sênior/Gerente</option>
-                                    <option value="5">Nível 5 - Diretor/Executivo</option>
-                                </select>
-                            </div>
-                        </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Configurações</div>
+                    <div class="nav-item" onclick="showTab('preferences')">
+                        <i class="fas fa-cog"></i>
+                        <span class="nav-item-text">Preferências</span>
+                    </div>
+                </div>
+            </nav>
 
-                        <div class="creator-section">
-                            <h3><i class="fas fa-globe"></i> Localização e Projetos</h3>
-                            <div class="form-group">
-                                <label for="customGeography">Geografia</label>
-                                <select id="customGeography">
-                                    <option value="">Selecione...</option>
-                                    <option value="BR">Brasil</option>
-                                    <option value="USA">Estados Unidos</option>
-                                    <option value="EU">Europa</option>
-                                    <option value="ASIA">Ásia</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="customProjects">Projetos</label>
-                                <div class="checkbox-group">
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" value="ALL" id="allProjects">
-                                        <span class="checkmark"></span>
-                                        Todos os Projetos
-                                    </label>
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" value="Apollo">
-                                        <span class="checkmark"></span>
-                                        Projeto Apollo
-                                    </label>
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" value="Phoenix">
-                                        <span class="checkmark"></span>
-                                        Projeto Phoenix
-                                    </label>
-                                    <label class="checkbox-item">
-                                        <input type="checkbox" value="Neptune">
-                                        <span class="checkmark"></span>
-                                        Projeto Neptune
-                                    </label>
-                                </div>
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <div class="user-profile" id="userProfile">
+                    <div class="user-avatar" id="userAvatarSidebar">U</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">Usuário</div>
+                        <div class="user-role" id="userRole">Admin</div>
+                    </div>
+                </div>
+
+                <!-- Dropdown do Perfil -->
+                <div class="user-profile-dropdown" id="userDropdown">
+                    <div class="dropdown-header">
+                        <div class="dropdown-user-info">
+                            <div class="dropdown-avatar" id="userAvatarDropdown">U</div>
+                            <div class="dropdown-user-details">
+                                <div class="dropdown-user-name" id="dropdownUserName">Usuário</div>
+                                <div class="dropdown-user-email" id="dropdownUserEmail">usuario@empresa.com</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="creator-actions">
-                        <button class="create-persona-btn" id="createPersonaBtn">
-                            <i class="fas fa-save"></i>
-                            Criar Persona
-                        </button>
-                        <button class="clear-form-btn" id="clearFormBtn">
-                            <i class="fas fa-trash"></i>
-                            Limpar Formulário
+                    <div class="dropdown-body">
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">Cargo</div>
+                            <div class="profile-info-value" id="dropdownCargo">
+                                <i class="fas fa-briefcase"></i>
+                                <span>Gerente</span>
+                            </div>
+                        </div>
+
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">Área</div>
+                            <div class="profile-info-value" id="dropdownArea">
+                                <i class="fas fa-building"></i>
+                                <span>Tecnologia da Informação</span>
+                            </div>
+                        </div>
+
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">País</div>
+                            <div class="profile-info-value" id="dropdownPais">
+                                <i class="fas fa-globe"></i>
+                                <span>Brasil</span>
+                            </div>
+                        </div>
+
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">Departamento</div>
+                            <div class="profile-info-value" id="dropdownDepartamento">
+                                <i class="fas fa-users"></i>
+                                <span>Desenvolvimento</span>
+                            </div>
+                        </div>
+
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">Projetos</div>
+                            <div class="profile-info-value" id="dropdownProjetos">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>Neoson AI, Portal Corporativo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dropdown-footer">
+                        <button class="dropdown-logout-btn" id="dropdownLogoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Sair da Conta
                         </button>
                     </div>
+                </div>
+            </div>
+        </aside>
 
-                    <!-- Preview da Persona Criada -->
-                    <div class="persona-preview" id="personaPreview" style="display: none;">
-                        <h4><i class="fas fa-eye"></i> Preview da Persona</h4>
-                        <div class="preview-card">
-                            <div class="preview-avatar" id="previewAvatar">👤</div>
-                            <div class="preview-info">
-                                <div class="preview-name" id="previewName">Nome da Persona</div>
-                                <div class="preview-details" id="previewDetails">Detalhes da persona aparecerão aqui</div>
-                                <div class="preview-permissions">
-                                    <h5>Permissões de Acesso:</h5>
-                                    <div class="permission-tags" id="previewPermissions"></div>
+        <!-- ========== CONTEÚDO PRINCIPAL ========== -->
+        <main class="main-content">
+
+            <!-- Visualização da Árvore de Agentes -->
+            <div class="agents-tree-view" id="agentsTreeView">
+                <div class="tree-header">
+                    <h1>Árvore de Agentes</h1>
+                    <p>Estrutura hierárquica do sistema multi-agente Neoson</p>
+                </div>
+                <div id="treeContainer">
+                    <!-- A árvore será renderizada aqui via JavaScript -->
+                    <div class="tree-loading">
+                        <div class="tree-loading-spinner"></div>
+                        <div class="tree-loading-text">Carregando estrutura de agentes...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Página de Preferências -->
+            <div class="preferences-view" id="preferencesView">
+                <div class="preferences-container">
+                    <div class="preferences-header">
+                        <div class="preferences-title-section">
+                            <h1>⚙️ Preferências</h1>
+                            <p>Configure suas informações de perfil e preferências do sistema</p>
+                            <div class="dev-badge">
+                                <i class="fas fa-code"></i>
+                                <span>MODO DESENVOLVIMENTO</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="preferences-content">
+                        <!-- Informações do Perfil -->
+                        <div class="preferences-section">
+                            <div class="section-header">
+                                <h2><i class="fas fa-user"></i> Informações do Perfil</h2>
+                                <p class="section-description">Dados básicos do usuário</p>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="prefUsername">
+                                        <i class="fas fa-user"></i>
+                                        Nome de Usuário
+                                    </label>
+                                    <input type="text" id="prefUsername" placeholder="Digite seu nome de usuário">
                                 </div>
+
+                                <div class="form-group">
+                                    <label for="prefFullName">
+                                        <i class="fas fa-id-card"></i>
+                                        Nome Completo
+                                    </label>
+                                    <input type="text" id="prefFullName" placeholder="Digite seu nome completo">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="prefEmail">
+                                        <i class="fas fa-envelope"></i>
+                                        E-mail
+                                    </label>
+                                    <input type="email" id="prefEmail" placeholder="seu.email@empresa.com">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="prefRole">
+                                        <i class="fas fa-shield-alt"></i>
+                                        Cargo/Função
+                                    </label>
+                                    <select id="prefRole">
+                                        <option value="admin">Administrador</option>
+                                        <option value="manager">Gerente</option>
+                                        <option value="analyst">Analista</option>
+                                        <option value="developer">Desenvolvedor</option>
+                                        <option value="user">Usuário</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Informações Profissionais -->
+                        <div class="preferences-section">
+                            <div class="section-header">
+                                <h2><i class="fas fa-briefcase"></i> Informações Profissionais</h2>
+                                <p class="section-description">Dados da sua posição e área de atuação</p>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="prefCargo">
+                                        <i class="fas fa-briefcase"></i>
+                                        Cargo
+                                    </label>
+                                    <input type="text" id="prefCargo" placeholder="Ex: Gerente de TI">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="prefArea">
+                                        <i class="fas fa-building"></i>
+                                        Área
+                                    </label>
+                                    <input type="text" id="prefArea" placeholder="Ex: Tecnologia da Informação">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="prefDepartamento">
+                                        <i class="fas fa-users"></i>
+                                        Departamento
+                                    </label>
+                                    <input type="text" id="prefDepartamento" placeholder="Ex: Desenvolvimento">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="prefPais">
+                                        <i class="fas fa-globe"></i>
+                                        País
+                                    </label>
+                                    <select id="prefPais">
+                                        <option value="Brasil">Brasil</option>
+                                        <option value="Estados Unidos">Estados Unidos</option>
+                                        <option value="Portugal">Portugal</option>
+                                        <option value="Espanha">Espanha</option>
+                                        <option value="Argentina">Argentina</option>
+                                        <option value="México">México</option>
+                                        <option value="Chile">Chile</option>
+                                        <option value="Outro">Outro</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group form-group-full">
+                                    <label for="prefProjetos">
+                                        <i class="fas fa-project-diagram"></i>
+                                        Projetos
+                                    </label>
+                                    <input type="text" id="prefProjetos" placeholder="Ex: Neoson AI, Portal Corporativo">
+                                    <small>Separe múltiplos projetos por vírgula</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="preferences-actions">
+                            <button class="pref-btn pref-btn-secondary" onclick="resetPreferences()">
+                                <i class="fas fa-undo"></i>
+                                Restaurar Padrões
+                            </button>
+                            <button class="pref-btn pref-btn-primary" onclick="savePreferences()">
+                                <i class="fas fa-save"></i>
+                                Salvar Alterações
+                            </button>
+                        </div>
+
+                        <!-- Aviso de Desenvolvimento -->
+                        <div class="dev-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div>
+                                <strong>Aviso de Desenvolvimento:</strong>
+                                <p>Esta funcionalidade é apenas para desenvolvimento e testes. Em produção, as informações de perfil serão carregadas automaticamente do banco de dados corporativo.</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Chat Section -->
-            <div class="chat-section">
-                <h2><i class="fas fa-comments"></i> Converse com o Neoson</h2>
-                <div class="chat-container">
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="welcome-message">
-                            <div class="message-avatar neoson-avatar">🤖</div>
-                            <div class="message-content">
-                                <h3>Bem-vindo ao Sistema Neoson!</h3>
-                                <p>Sou o Neoson, seu assistente inteligente multi-agente. Posso ajudar você com:</p>
-                                <ul>
-                                    <li><strong>Questões de RH:</strong> Delegarei para a Ana, especialista em recursos humanos</li>
-                                    <li><strong>Questões de TI:</strong> Sistema hierárquico com 4 sub-especialistas:
-                                        <ul class="sub-list">
-                                            <li>🏛️ <strong>Ariel (Governança):</strong> LGPD, Compliance, Delivery Methods</li>
-                                            <li>🖥️ <strong>Alice (Infraestrutura):</strong> Servidores, Redes, Monitoramento</li>
-                                            <li>⚡ <strong>Carlos (Desenvolvimento):</strong> APIs, Deploy, Arquitetura</li>
-                                            <li>🎧 <strong>Marina (Usuário Final):</strong> Senhas, Acessos, Suporte</li>
-                                        </ul>
-                                    </li>
-                                    <li><strong>Coordenação Inteligente:</strong> Escolho automaticamente o melhor especialista</li>
-                                </ul>
-                                <p>Como posso ajudá-lo hoje?</p>
-                            </div>
+            <!-- Página de Base de Conhecimento -->
+            <div class="knowledge-view" id="knowledgeView">
+                <div class="knowledge-container">
+                    <div class="knowledge-header">
+                        <div class="knowledge-title-section">
+                            <h1>Base de Conhecimento</h1>
+                            <p>Injetar documentos nas tabelas dos agentes para enriquecer suas bases de conhecimento</p>
                         </div>
                     </div>
-                    
-                    <form class="chat-form" id="chatForm">
-                        <div class="input-group">
-                            <textarea
-                                id="mensagem"
-                                placeholder="Digite sua mensagem aqui... (Ctrl + Enter para enviar)"
-                                maxlength="1000"
-                                rows="3"
-                            ></textarea>
-                        </div>
-                        <div class="input-footer">
-                            <div class="char-counter">0/1000</div>
-                            <div class="send-area">
-                                <div class="processing-indicator" id="processingIndicator">
-                                    <div class="spinner"></div>
-                                    <span class="processing-text" id="processingText">Processando...</span>
-                                </div>
-                                <button type="submit" id="sendBtn">
-                                    <i class="fas fa-paper-plane"></i>
-                                    Enviar
+
+                    <div class="knowledge-content">
+                        <!-- Upload de Arquivo -->
+                        <div class="knowledge-section">
+                            <div class="section-header">
+                                <h2><i class="fas fa-file-upload"></i> Seleção de Documentos</h2>
+                                <p class="section-description">Carregue um ou mais arquivos (PDF, DOCX)</p>
+                            </div>
+
+                            <div class="upload-area" id="uploadArea">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Arraste arquivos aqui ou clique para selecionar</p>
+                                <input type="file" id="fileInput" multiple accept=".pdf,.docx" style="display:none;">
+                                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-folder-open"></i>
+                                    Selecionar Arquivos
                                 </button>
                             </div>
+
+                            <div class="selected-files" id="selectedFiles"></div>
                         </div>
-                    </form>
+
+                        <!-- Tabela de Destino -->
+                        <div class="knowledge-section">
+                            <div class="section-header">
+                                <h2><i class="fas fa-database"></i> Destino</h2>
+                                <p class="section-description">Selecione qual agente receberá o conhecimento</p>
+                            </div>
+
+                            <div class="form-group-full">
+                                <label for="targetAgent">
+                                    <i class="fas fa-robot"></i>
+                                    Agente de Destino
+                                </label>
+                                <select id="targetAgent">
+                                    <option value="">Selecione um agente...</option>
+                                    <option value="knowledge_hr">Agente RH</option>
+                                    <option value="knowledge_it_governance_delivery_methods">Agente TI - Governança</option>
+                                    <option value="knowledge_architecture_dev">Agente TI - Desenvolvimento</option>
+                                    <option value="knowledge_end_user">Agente TI - Usuário Final</option>
+                                    <option value="knowledge_cyber">Agente TI - Cyber Security</option>
+                                    <option value="knowledge_network">Agente TI - Network</option>
+                                    <option value="knowledge_datacenter_cloud">Agente TI - Datacenter & Cloud</option>
+                                    <option value="knowledge_business_intelligence">Agente TI - Business Intelligence</option>
+                                    <option value="knowledge_solution_services">Agente TI - Solution Services</option>
+                                    <option value="knowledge_enterpriseapps_sales_supply">Agente Enterprise Apps - Sales & Supply Chain</option>
+                                    <option value="knowledge_enterpriseapps_finance_co">Agente Enterprise Apps - Finance & CO</option>
+                                    <option value="knowledge_enterpriseapps_mfg_quality">Agente Enterprise Apps - Manufacturing & Quality</option>
+                                    <option value="knowledge_enterpriseapps_tech_integration">Agente Enterprise Apps - Tech & Integration</option>
+                                    <option value="knowledge_crm">Agente CRM</option>
+                                    <option value="knowledge_service_desk">Agente Service Desk</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Metadados de Governança -->
+                        <div class="knowledge-section">
+                            <div class="section-header">
+                                <h2><i class="fas fa-shield-alt"></i> Metadados de Governança</h2>
+                                <p class="section-description">Configure permissões e restrições de acesso</p>
+                            </div>
+
+                            <div class="form-grid">
+                                <!-- Responsável e Aprovador -->
+                                <div class="form-group">
+                                    <label for="knResponsavel">
+                                        <i class="fas fa-user"></i>
+                                        Responsável
+                                    </label>
+                                    <input type="text" id="knResponsavel" placeholder="Nome do responsável">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="knAprovador">
+                                        <i class="fas fa-user-check"></i>
+                                        Aprovador
+                                    </label>
+                                    <input type="text" id="knAprovador" placeholder="Nome do aprovador">
+                                </div>
+
+                                <!-- Áreas, Geografias, Projetos -->
+                                <div class="form-group">
+                                    <label for="knAreas">
+                                        <i class="fas fa-building"></i>
+                                        Áreas Liberadas
+                                    </label>
+                                    <select id="knAreas" class="factory-select" multiple size="8">
+                                        <option value="RH">RH</option>
+                                        <option value="TI">TI</option>
+                                        <option value="Financeiro">Financeiro</option>
+                                        <option value="Juridico">Jurídico</option>
+                                        <option value="Vendas">Vendas</option>
+                                        <option value="Marketing">Marketing</option>
+                                        <option value="Operações">Operações</option>
+                                        <option value="ALL" selected>ALL</option>
+                                    </select>
+                                    <small>Segure Ctrl para selecionar múltiplas opções</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="knGeografias">
+                                        <i class="fas fa-globe"></i>
+                                        Geografias Liberadas
+                                    </label>
+                                    <select id="knGeografias" class="factory-select" multiple size="9">
+                                        <option value="BR">BR</option>
+                                        <option value="US">US</option>
+                                        <option value="AR">AR</option>
+                                        <option value="CL">CL</option>
+                                        <option value="CO">CO</option>
+                                        <option value="MX">MX</option>
+                                        <option value="ALL_LATAM">ALL_LATAM</option>
+                                        <option value="ALL_EUROPE">ALL_EUROPE</option>
+                                        <option value="ALL" selected>ALL</option>
+                                    </select>
+                                    <small>Segure Ctrl para selecionar múltiplas opções</small>
+                                </div>
+
+                                <!-- Nível Hierárquico e Idioma -->
+                                <div class="form-group">
+                                    <label for="knNivelHierarquico">
+                                        <i class="fas fa-layer-group"></i>
+                                        Nível Hierárquico Mínimo
+                                    </label>
+                                    <select id="knNivelHierarquico" class="factory-select">
+                                        <option value="1">1: Estagiário/Aprendiz</option>
+                                        <option value="2">2: Analista Júnior</option>
+                                        <option value="3" selected>3: Analista Pleno/Sênior</option>
+                                        <option value="4">4: Coordenador/Gerente</option>
+                                        <option value="5">5: Diretor/Executivo</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="knIdioma">
+                                        <i class="fas fa-language"></i>
+                                        Idioma
+                                    </label>
+                                    <select id="knIdioma" class="factory-select">
+                                        <option value="pt-br" selected>Português (BR)</option>
+                                        <option value="en-us">English (US)</option>
+                                        <option value="es-es">Español (ES)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Data de Validade -->
+                                <div class="form-group">
+                                    <label for="knDataValidade">
+                                        <i class="fas fa-calendar"></i>
+                                        Data de Validade
+                                    </label>
+                                    <input type="date" id="knDataValidade">
+                                    <small>Deixe vazio para sem validade</small>
+                                </div>
+
+                                <!-- Checkboxes -->
+                                <div class="form-group">
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="knDadoSensivel">
+                                            <span>Dado Sensível</span>
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="knApenasSi">
+                                            <span>Apenas para Si</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Projetos (campo especial) -->
+                            <div class="form-group-full">
+                                <label for="knProjetos">
+                                    <i class="fas fa-project-diagram"></i>
+                                    Projetos Liberados
+                                </label>
+                                <input type="text" id="knProjetos" placeholder="N/A ou liste separado por vírgulas" value="N/A">
+                                <small>Projetos específicos que terão acesso a este conhecimento</small>
+                            </div>
+                        </div>
+
+                        <!-- Log de Processamento -->
+                        <div class="knowledge-section">
+                            <div class="section-header">
+                                <h2><i class="fas fa-terminal"></i> Log de Processamento</h2>
+                                <p class="section-description">Acompanhe o processamento dos documentos em tempo real</p>
+                            </div>
+
+                            <div class="log-container" id="knowledgeLog">
+                                <div class="log-placeholder">
+                                    <i class="fas fa-info-circle"></i>
+                                    <p>Aguardando início do processamento...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="knowledge-actions">
+                            <button class="knowledge-btn knowledge-btn-secondary" onclick="clearKnowledgeForm()">
+                                <i class="fas fa-times"></i>
+                                Limpar Formulário
+                            </button>
+                            <button class="knowledge-btn knowledge-btn-primary" onclick="startIngestion()" id="startIngestionBtn">
+                                <i class="fas fa-play"></i>
+                                Iniciar Ingestão
+                            </button>
+                        </div>
+
+                        <!-- Info de Status -->
+                        <div class="ingestion-status" id="ingestionStatus" style="display: none;">
+                            <div class="status-content">
+                                <div class="status-spinner"></div>
+                                <div class="status-text">
+                                    <strong>Processando...</strong>
+                                    <p id="statusMessage">Preparando documentos...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Memory Controls -->
-            <div class="memory-section">
-                <h2><i class="fas fa-brain"></i> Controle de Memória</h2>
-                <p>Limpe a memória de conversas quando necessário:</p>
-                <button class="clear-memory-btn" id="clearMemoryBtn">
-                    <i class="fas fa-trash-alt"></i>
-                    Limpar Memória
+            <!-- 🏭 PÁGINA CRIAR AGENTE (FACTORY) -->
+            <div class="factory-view" id="factoryView">
+                <div class="factory-header">
+                    <h1>Fábrica de Agentes</h1>
+                    <p>Crie subagentes especializados ou coordenadores para gerenciar equipes</p>
+                </div>
+
+                <!-- Seletor de Tipo de Agente -->
+                <div class="agent-type-selector">
+                    <button class="type-btn active" data-type="subagent" onclick="selectAgentType('subagent')">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Subagente</span>
+                        <small>Especialista em uma área</small>
+                    </button>
+                    <button class="type-btn" data-type="coordinator" onclick="selectAgentType('coordinator')">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Coordenador</span>
+                        <small>Gerencia múltiplos agentes</small>
+                    </button>
+                </div>
+
+                <!-- Formulário de Subagente -->
+                <div class="agent-form" id="subagentForm" style="display: block;">
+                    <div class="form-section">
+                        <h3><i class="fas fa-id-card"></i> Informações Básicas</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="subagent_name">Nome do Agente *</label>
+                                <input type="text" id="subagent_name" placeholder="Ex: Carlos, Marina, Roberto" required>
+                                <small>Nome humanizado do agente</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="subagent_identifier">Identificador Único *</label>
+                                <input type="text" id="subagent_identifier" placeholder="Ex: dev, support, sales" required>
+                                <small>ID único (letras minúsculas, sem espaços)</small>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="subagent_specialty">Especialidade *</label>
+                                <input type="text" id="subagent_specialty" placeholder="Ex: Desenvolvimento de Software, Suporte Técnico" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="subagent_description">Descrição Completa *</label>
+                                <textarea id="subagent_description" rows="3" placeholder="Descreva as responsabilidades e competências do agente..." required></textarea>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="subagent_keywords">Palavras-chave *</label>
+                                <input type="text" id="subagent_keywords" placeholder="Ex: python, javascript, código, bug">
+                                <small>Palavras separadas por vírgula para classificação</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-database"></i> Configuração de Conhecimento</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="subagent_table">Nome da Tabela</label>
+                                <input type="text" id="subagent_table" placeholder="knowledge_{identifier}">
+                                <small>Deixe vazio para usar padrão</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="subagent_coordinator">Coordenador Pai</label>
+                                <select id="subagent_coordinator" class="factory-select">
+                                    <option value="">Nenhum</option>
+                                    <!-- Será preenchido dinamicamente -->
+                                </select>
+                                <small>Coordenador que gerencia este agente</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-brain"></i> Configuração LLM</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="subagent_model">Modelo LLM</label>
+                                <select id="subagent_model" class="factory-select">
+                                    <option value="gpt-4o-mini" selected>GPT-4o Mini (Recomendado)</option>
+                                    <option value="gpt-4o">GPT-4o (Mais Poderoso)</option>
+                                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Mais Rápido)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="subagent_temperature">Temperatura (0-1)</label>
+                                <input type="number" id="subagent_temperature" value="0.3" min="0" max="1" step="0.1">
+                                <small>Criatividade: 0=preciso, 1=criativo</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="subagent_max_tokens">Max Tokens</label>
+                                <input type="number" id="subagent_max_tokens" value="10000" min="1000" max="128000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-tools"></i> Ferramentas MCP (Opcional)</h3>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="subagent_enable_mcp" onchange="toggleMCPFields()">
+                                <span>Habilitar Model Context Protocol (MCP)</span>
+                            </label>
+                            <small>Permite que o agente use ferramentas externas</small>
+                        </div>
+                        <div id="mcpFields" style="display: none;">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="subagent_mcp_category">Categoria MCP</label>
+                                    <input type="text" id="subagent_mcp_category" placeholder="Ex: servicedesk, crm">
+                                </div>
+                                <div class="form-group full-width">
+                                    <label for="subagent_allowed_tools">Ferramentas Permitidas</label>
+                                    <input type="text" id="subagent_allowed_tools" placeholder="Ex: create_ticket, get_status">
+                                    <small>Nomes das ferramentas separados por vírgula</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn-secondary" onclick="resetFactoryForm()">
+                            <i class="fas fa-redo"></i> Limpar
+                        </button>
+                        <button class="btn-primary" onclick="createAgent()">
+                            <i class="fas fa-plus-circle"></i> Criar Subagente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Formulário de Coordenador -->
+                <div class="agent-form" id="coordinatorForm" style="display: none;">
+                    <div class="form-section">
+                        <h3><i class="fas fa-id-card"></i> Informações Básicas</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="coord_name">Nome do Coordenador *</label>
+                                <input type="text" id="coord_name" placeholder="Ex: Coordenador TI" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="coord_identifier">Identificador Único *</label>
+                                <input type="text" id="coord_identifier" placeholder="Ex: ti, rh, vendas" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="coord_specialty">Especialidade *</label>
+                                <input type="text" id="coord_specialty" placeholder="Ex: Tecnologia da Informação" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="coord_description">Descrição Completa *</label>
+                                <textarea id="coord_description" rows="3" placeholder="Descreva a área de atuação do coordenador..." required></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-users"></i> Agentes Gerenciados</h3>
+                        <div class="form-group full-width">
+                            <label>Selecione os Subagentes *</label>
+                            <div class="agent-selector" id="agentSelector">
+                                <!-- Será preenchido dinamicamente -->
+                            </div>
+                            <small>Selecione os agentes que este coordenador irá gerenciar</small>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn-secondary" onclick="resetFactoryForm()">
+                            <i class="fas fa-redo"></i> Limpar
+                        </button>
+                        <button class="btn-primary" onclick="createCoordinator()">
+                            <i class="fas fa-plus-circle"></i> Criar Coordenador
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lista de Agentes Criados -->
+                <div class="agents-list-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-list"></i> Agentes Criados</h3>
+                        <button class="btn-refresh" onclick="refreshAgentsList()">
+                            <i class="fas fa-sync-alt"></i> Atualizar
+                        </button>
+                    </div>
+                    
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalAgents">0</div>
+                            <div class="stat-label">Total de Agentes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalSubagents">0</div>
+                            <div class="stat-label">Subagentes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalCoordinators">0</div>
+                            <div class="stat-label">Coordenadores</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalWithMCP">0</div>
+                            <div class="stat-label">Com MCP Tools</div>
+                        </div>
+                    </div>
+
+                    <div class="agents-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Nome</th>
+                                    <th>Identificador</th>
+                                    <th>Especialidade</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="agentsTableBody">
+                                <tr>
+                                    <td colspan="6" class="loading">Carregando agentes...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Status Popup -->
+                <div class="factory-status" id="factoryStatus" style="display: none;">
+                    <div class="status-spinner"></div>
+                    <span id="factoryStatusText">Processando...</span>
+                </div>
+            </div>
+
+            <!-- Área de Mensagens -->
+            <div class="chat-messages" id="chatMessages">
+                <!-- Tela de Boas-vindas -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-logo">
+                        <img src="/static/assets/logo.png" alt="Neoson Logo">
+                    </div>
+                    <h1 class="welcome-title">Como posso ajudar, Emmanuel?</h1>
+                    <p class="welcome-subtitle">
+                        Sou o Neoson, seu assistente inteligente multi-agente. 
+                        Posso ajudar com desenvolvimento, análise de dados, automação e muito mais.
+                    </p>
+                    
+                    <div class="welcome-suggestions">
+                        <div class="suggestion-card" onclick="sendSuggestion('Explique como funcionam os agentes no sistema')">
+                            <div class="suggestion-icon">🤖</div>
+                            <div class="suggestion-text">Explique como funcionam os agentes no sistema</div>
+                        </div>
+                        <div class="suggestion-card" onclick="sendSuggestion('Crie um agente especializado em Python')">
+                            <div class="suggestion-icon">🐍</div>
+                            <div class="suggestion-text">Crie um agente especializado em Python</div>
+                        </div>
+                        <div class="suggestion-card" onclick="sendSuggestion('Mostre os logs mais recentes')">
+                            <div class="suggestion-icon">📋</div>
+                            <div class="suggestion-text">Mostre os logs mais recentes</div>
+                        </div>
+                        <div class="suggestion-card" onclick="sendSuggestion('Como posso fazer upload de documentos?')">
+                            <div class="suggestion-icon">📄</div>
+                            <div class="suggestion-text">Como posso fazer upload de documentos?</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Container de Mensagens -->
+                <div class="messages-container hidden" id="messagesContainer"></div>
+            </div>
+
+            <!-- Área de Input -->
+            <div class="chat-input-container centered" id="inputContainer">
+                <div class="input-wrapper">
+                    <div class="input-actions">
+                        <button class="input-btn" title="Anexar arquivo">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                    </div>
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Envie uma mensagem para Neoson..."
+                        rows="1"
+                    ></textarea>
+                    <div class="input-actions">
+                        <button class="send-btn" id="sendBtn" disabled title="Enviar mensagem">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Detalhes do Agente -->
+    <div class="agent-modal" id="agentModal">
+        <div class="agent-modal-content">
+            <div class="agent-modal-header">
+                <button class="modal-close-btn" onclick="closeAgentModal()" title="Fechar" aria-label="Fechar modal">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="agent-card-header">
+                    <div class="agent-tree-icon" id="modalIcon">🤖</div>
+                    <div class="agent-tree-info">
+                        <h2 class="agent-tree-name" id="modalName">Nome do Agente</h2>
+                        <p class="agent-tree-specialty" id="modalSpecialty">Especialidade</p>
+                        <span class="agent-type-badge" id="modalTypeBadge">Tipo</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agent-modal-body">
+                <div class="modal-section" id="modalDescriptionSection">
+                    <h3 class="modal-section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Descrição
+                    </h3>
+                    <p class="agent-tree-description" id="modalDescription">Descrição do agente...</p>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">
+                        <i class="fas fa-cog"></i>
+                        Informações Técnicas
+                    </h3>
+                    <div class="modal-info-grid">
+                        <div class="modal-info-item">
+                            <div class="modal-info-label">Identificador</div>
+                            <div class="modal-info-value" id="modalIdentifier">-</div>
+                        </div>
+                        <div class="modal-info-item">
+                            <div class="modal-info-label">Tipo</div>
+                            <div class="modal-info-value" id="modalType">-</div>
+                        </div>
+                        <div class="modal-info-item" id="modalTableSection" style="display: none;">
+                            <div class="modal-info-label">Base de Dados</div>
+                            <div class="modal-info-value" id="modalTable">-</div>
+                        </div>
+                        <div class="modal-info-item" id="modalChildrenSection" style="display: none;">
+                            <div class="modal-info-label">Subordinados</div>
+                            <div class="modal-info-value" id="modalChildren">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-section" id="modalKeywordsSection">
+                    <h3 class="modal-section-title">
+                        <i class="fas fa-tags"></i>
+                        Palavras-chave
+                    </h3>
+                    <div class="modal-keywords" id="modalKeywords">
+                        <!-- Keywords serão renderizadas aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-primary" onclick="startChatWithAgent()">
+                    <i class="fas fa-comment"></i>
+                    Conversar com este agente
+                </button>
+                <button class="modal-btn modal-btn-secondary" onclick="closeAgentModal()">
+                    <i class="fas fa-times"></i>
+                    Fechar
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Processing Overlay -->
-    <div class="processing-overlay" id="processingOverlay">
-        <div class="processing-content">
-            <div class="neoson-processing">
-                <div class="processing-avatar">🤖</div>
-                <h3>Neoson Processando</h3>
-                <p>Analisando sua solicitação e selecionando o melhor agente...</p>
-            </div>
+    <script>
+        // ============================================================================
+        // 🎯 VARIÁVEIS GLOBAIS
+        // ============================================================================
+        let sidebarCollapsed = false;
+        let hasMessages = false;
+        let currentToken = localStorage.getItem('token');
+        
+        // Variáveis para árvore de agentes
+        let agentsData = null;
+        window.agentsTreeLoaded = false;
+        let currentAgentData = null;
 
-            <div class="processing-steps">
-                <div class="step" id="step-analyzing">
-                    <span><i class="fas fa-search"></i> Analisando solicitação</span>
-                    <div class="step-loader"></div>
-                </div>
+        // ============================================================================
+        // 🎨 SIDEBAR
+        // ============================================================================
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+
+        if (sidebarToggle && sidebar) {
+            sidebarToggle.addEventListener('click', () => {
+                sidebarCollapsed = !sidebarCollapsed;
+                sidebar.classList.toggle('collapsed');
                 
-                <div class="step" id="step-classifying">
-                    <span><i class="fas fa-tags"></i> Classificando tipo de pergunta</span>
-                    <div class="step-loader"></div>
-                </div>
+                // Atualizar ícone
+                const icon = sidebarToggle.querySelector('i');
+                if (icon) {
+                    icon.className = sidebarCollapsed ? 'fas fa-bars' : 'fas fa-times';
+                }
+            });
+        }
+
+        // ============================================================================
+        // 💬 CHAT
+        // ============================================================================
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const inputContainer = document.getElementById('inputContainer');
+        const chatMessages = document.getElementById('chatMessages');
+        
+        // Elementos para navegação
+        const chatArea = document.querySelector('.chat-messages');
+        const agentsTreeView = document.getElementById('agentsTreeView');
+        
+        // Elementos do perfil de usuário
+        const userProfile = document.getElementById('userProfile');
+        const userDropdown = document.getElementById('userDropdown');
+        const dropdownLogoutBtn = document.getElementById('dropdownLogoutBtn');
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', () => {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = messageInput.scrollHeight + 'px';
+            
+            // Habilitar/desabilitar botão de envio
+            sendBtn.disabled = !messageInput.value.trim();
+        });
+
+        // Enviar com Enter (Shift+Enter para nova linha)
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (messageInput.value.trim()) {
+                    sendMessage();
+                }
+            }
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+
+        // ============================================================================
+        // 📤 ENVIAR MENSAGEM
+        // ============================================================================
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Primeira mensagem: animação de transição
+            if (!hasMessages) {
+                animateFirstMessage();
+            }
+
+            // Adicionar mensagem do usuário
+            addMessage(message, 'user');
+            
+            // Limpar input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            sendBtn.disabled = true;
+
+            // Mostrar typing indicator
+            const typingId = addTypingIndicator();
+
+            try {
+                // Enviar para API
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ mensagem: message })
+                });
+
+                const data = await response.json();
+
+                // Remover typing indicator
+                removeTypingIndicator(typingId);
+
+                if (data.success && data.response) {
+                    addMessage(data.response, 'assistant');
+                } else if (data.detail) {
+                    addMessage(`Erro: ${data.detail}`, 'assistant');
+                } else {
+                    addMessage('Desculpe, não consegui processar sua mensagem.', 'assistant');
+                }
+            } catch (error) {
+                removeTypingIndicator(typingId);
+                addMessage('Desculpe, ocorreu um erro ao processar sua mensagem.', 'assistant');
+                console.error('Erro:', error);
+            }
+        }
+
+        // ============================================================================
+        // 🎬 ANIMAÇÃO DA PRIMEIRA MENSAGEM
+        // ============================================================================
+        function animateFirstMessage() {
+            hasMessages = true;
+            
+            // Esconder tela de boas-vindas
+            welcomeScreen.classList.add('hidden');
+            
+            // Mostrar container de mensagens
+            messagesContainer.classList.remove('hidden');
+            
+            // Mover input para baixo
+            inputContainer.classList.remove('centered');
+            inputContainer.classList.add('bottom');
+        }
+
+        // ============================================================================
+        // 💬 ADICIONAR MENSAGEM COM SUPORTE A MARKDOWN
+        // ============================================================================
+        function addMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${type}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'message-header';
+            headerDiv.innerHTML = type === 'user' 
+                ? '<i class="fas fa-user"></i> Você' 
+                : '<i class="fas fa-robot"></i> Neoson';
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+            
+            // Se for mensagem do assistente, renderizar Markdown
+            if (type === 'assistant' || type === 'agent') {
+                try {
+                    // Configurar Marked.js para melhor renderização
+                    marked.setOptions({
+                        breaks: true,        // Quebras de linha como <br>
+                        gfm: true,          // GitHub Flavored Markdown
+                        headerIds: false,    // Sem IDs nos headers
+                        mangle: false        // Não modificar emails
+                    });
+                    
+                    // Renderizar Markdown
+                    const htmlContent = marked.parse(text);
+                    textDiv.innerHTML = htmlContent;
+                    
+                    // Aplicar syntax highlighting em blocos de código
+                    textDiv.querySelectorAll('pre code').forEach((block) => {
+                        // Adicionar botão de copiar
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'code-copy-btn';
+                        copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                        copyBtn.onclick = function() {
+                            const code = block.textContent;
+                            navigator.clipboard.writeText(code).then(() => {
+                                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+                                setTimeout(() => {
+                                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                                }, 2000);
+                            });
+                        };
+                        block.parentElement.appendChild(copyBtn);
+                        
+                        // Aplicar highlight
+                        hljs.highlightElement(block);
+                    });
+                    
+                } catch (error) {
+                    console.error('Erro ao renderizar Markdown:', error);
+                    textDiv.textContent = text;  // Fallback para texto puro
+                }
+            } else {
+                // Mensagens do usuário não precisam de Markdown
+                textDiv.textContent = text;
+            }
+            
+            contentDiv.appendChild(headerDiv);
+            contentDiv.appendChild(textDiv);
+            messageDiv.appendChild(contentDiv);
+            
+            messagesContainer.appendChild(messageDiv);
+            
+            // Scroll para baixo
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // ============================================================================
+        // ⌨️ TYPING INDICATOR
+        // ============================================================================
+        let typingCounter = 0;
+
+        function addTypingIndicator() {
+            const id = `typing-${typingCounter++}`;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-assistant';
+            messageDiv.id = id;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            
+            contentDiv.appendChild(typingDiv);
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return id;
+        }
+
+        function removeTypingIndicator(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.remove();
+            }
+        }
+
+        // ============================================================================
+        // 💡 SUGESTÕES
+        // ============================================================================
+        function sendSuggestion(text) {
+            messageInput.value = text;
+            messageInput.focus();
+            sendBtn.disabled = false;
+            sendMessage();
+        }
+
+        // ============================================================================
+        // 🔄 NOVO CHAT (Já tem onclick no HTML, não precisa de listener aqui)
+        // ============================================================================
+        // Função startNewChat() já definida anteriormente
+
+        // ============================================================================
+        // 🗑️ LIMPAR CHAT (OPCIONAL - Botão pode não existir)
+        // ============================================================================
+        const clearBtn = document.getElementById('clearBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (confirm('Deseja limpar todas as mensagens?')) {
+                    messagesContainer.innerHTML = '';
+                    messagesContainer.classList.add('hidden');
+                    welcomeScreen.classList.remove('hidden');
+                    inputContainer.classList.add('centered');
+                    inputContainer.classList.remove('bottom');
+                    hasMessages = false;
+                }
+            });
+        }
+
+        // ============================================================================
+        // 💾 EXPORTAR (OPCIONAL - Botão pode não existir)
+        // ============================================================================
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                const messages = Array.from(messagesContainer.querySelectorAll('.message'));
+                const text = messages.map(msg => {
+                    const type = msg.classList.contains('message-user') ? 'Usuário' : 'Neoson';
+                    const content = msg.querySelector('.message-text').textContent;
+                    return `${type}: ${content}`;
+                }).join('\n\n');
                 
-                <div class="step" id="step-delegating">
-                    <span><i class="fas fa-hand-point-right"></i> Delegando para especialista</span>
-                    <div class="step-loader"></div>
-                </div>
-            </div>
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `neoson-chat-${new Date().toISOString()}.txt`;
+                a.click();
+            });
+        }
 
-            <div class="agent-handoff">
-                <div class="handoff-arrow">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-                <div class="target-agent">
-                    <div class="agent-avatar neoson">🤖</div>
-                    <h4>Agente</h4>
-                </div>
-            </div>
-        </div>
-    </div>
+        // ============================================================================
+        // 🚪 LOGOUT (OPCIONAL - Botão pode não existir)
+        // ============================================================================
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('Deseja sair?')) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+            });
+        }
 
-    <script src="/static/script_neoson.js?v=2025100902"></script>
+        // ============================================================================
+        // 🔐 VERIFICAR AUTENTICAÇÃO
+        // ============================================================================
+        
+        // Validar token JWT (deve ter 3 partes: header.payload.signature)
+        function isValidJWT(token) {
+            if (!token) return false;
+            const parts = token.split('.');
+            return parts.length === 3;
+        }
+
+        // Se não tiver token ou token inválido, redirecionar
+        if (!currentToken || !isValidJWT(currentToken)) {
+            console.warn('Token inválido ou ausente, redirecionando para login...');
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        } else {
+            // Buscar informações do usuário
+            fetch('/api/user', {
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Não autenticado');
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.username) {
+                    // Atualizar sidebar
+                    document.getElementById('userName').textContent = data.username;
+                    document.getElementById('userRole').textContent = data.role || 'User';
+                    const avatar = data.username.charAt(0).toUpperCase();
+                    document.getElementById('userAvatarSidebar').textContent = avatar;
+                    
+                    // Atualizar dropdown
+                    document.getElementById('dropdownUserName').textContent = data.full_name || data.username;
+                    document.getElementById('dropdownUserEmail').textContent = `${data.username}@empresa.com`;
+                    document.getElementById('userAvatarDropdown').textContent = avatar;
+                    
+                    // Atualizar informações do perfil (dados fictícios por enquanto)
+                    document.getElementById('dropdownCargo').querySelector('span').textContent = 
+                        data.role === 'admin' ? 'Gerente de TI' : 'Analista';
+                    document.getElementById('dropdownArea').querySelector('span').textContent = 
+                        'Tecnologia da Informação';
+                    document.getElementById('dropdownPais').querySelector('span').textContent = 
+                        'Brasil';
+                    document.getElementById('dropdownDepartamento').querySelector('span').textContent = 
+                        data.role === 'admin' ? 'Desenvolvimento & Inovação' : 'Suporte';
+                    document.getElementById('dropdownProjetos').querySelector('span').textContent = 
+                        'Neoson AI, Automações Corporativas';
+                } else {
+                    throw new Error('Dados do usuário inválidos');
+                }
+            })
+            .catch((error) => {
+                console.error('Erro ao buscar dados do usuário:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+            });
+        }
+
+        // ============================================================================
+        // 👤 DROPDOWN DO PERFIL
+        // ============================================================================
+        
+        if (userProfile && userDropdown) {
+            // Toggle dropdown ao clicar no perfil
+            userProfile.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('active');
+            });
+
+            // Fechar ao clicar fora
+            document.addEventListener('click', (e) => {
+                if (!userDropdown.contains(e.target) && !userProfile.contains(e.target)) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+
+            // Fechar com ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && userDropdown.classList.contains('active')) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+        }
+
+        // Logout pelo dropdown
+        if (dropdownLogoutBtn) {
+            dropdownLogoutBtn.addEventListener('click', () => {
+                if (confirm('Deseja sair da sua conta?')) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+            });
+        }
+
+        // ============================================================================
+        // 📑 NAVEGAÇÃO ENTRE ABAS
+        // ============================================================================
+        
+        function showTab(tabName) {
+            const preferencesView = document.getElementById('preferencesView');
+            const knowledgeView = document.getElementById('knowledgeView');
+            const factoryView = document.getElementById('factoryView');
+            
+            if (tabName === 'agents') {
+                // Ocultar área de chat, preferências, conhecimento e factory
+                chatArea.style.display = 'none';
+                inputContainer.style.display = 'none';
+                if (preferencesView) preferencesView.classList.remove('active');
+                if (knowledgeView) knowledgeView.classList.remove('active');
+                if (factoryView) factoryView.classList.remove('active');
+                
+                // Mostrar árvore de agentes
+                agentsTreeView.classList.add('active');
+                
+                // Carregar árvore se ainda não foi carregada
+                if (!window.agentsTreeLoaded) {
+                    loadAgentsTree();
+                }
+            } else if (tabName === 'chat') {
+                // Voltar para o chat
+                chatArea.style.display = 'flex';
+                inputContainer.style.display = 'block';
+                agentsTreeView.classList.remove('active');
+                if (preferencesView) preferencesView.classList.remove('active');
+                if (knowledgeView) knowledgeView.classList.remove('active');
+                if (factoryView) factoryView.classList.remove('active');
+            } else if (tabName === 'preferences') {
+                // Mostrar preferências
+                chatArea.style.display = 'none';
+                inputContainer.style.display = 'none';
+                agentsTreeView.classList.remove('active');
+                if (knowledgeView) knowledgeView.classList.remove('active');
+                if (factoryView) factoryView.classList.remove('active');
+                if (preferencesView) {
+                    preferencesView.classList.add('active');
+                    loadPreferences();
+                }
+            } else if (tabName === 'knowledge') {
+                // Mostrar base de conhecimento
+                chatArea.style.display = 'none';
+                inputContainer.style.display = 'none';
+                agentsTreeView.classList.remove('active');
+                if (preferencesView) preferencesView.classList.remove('active');
+                if (factoryView) factoryView.classList.remove('active');
+                if (knowledgeView) {
+                    knowledgeView.classList.add('active');
+                }
+            } else if (tabName === 'factory') {
+                // Mostrar factory de agentes
+                chatArea.style.display = 'none';
+                inputContainer.style.display = 'none';
+                agentsTreeView.classList.remove('active');
+                if (preferencesView) preferencesView.classList.remove('active');
+                if (knowledgeView) knowledgeView.classList.remove('active');
+                if (factoryView) {
+                    factoryView.classList.add('active');
+                    // Carregar dados do Factory
+                    if (typeof loadAvailableAgents === 'function') {
+                        loadAvailableAgents();
+                    }
+                    if (typeof refreshAgentsList === 'function') {
+                        refreshAgentsList();
+                    }
+                }
+            } else {
+                alert(`Funcionalidade "${tabName}" será implementada em breve!`);
+            }
+        }
+
+        // ============================================================================
+        // � NOVA CONVERSA
+        // ============================================================================
+        
+        function startNewChat() {
+            console.log('Iniciando nova conversa...');
+            
+            // Voltar para a view de chat
+            showTab('chat');
+            
+            // Limpar mensagens (exceto a de boas-vindas se necessário)
+            if (messagesContainer) {
+                messagesContainer.innerHTML = '';
+            }
+            
+            // Mostrar tela de boas-vindas novamente
+            if (welcomeScreen) {
+                welcomeScreen.style.display = 'flex';
+                messagesContainer.style.display = 'none';
+            }
+            
+            // Limpar input
+            if (messageInput) {
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+                sendBtn.disabled = true;
+            }
+            
+            // Resetar flag de mensagens
+            hasMessages = false;
+            
+            console.log('Nova conversa iniciada com sucesso!');
+        }
+
+        // ============================================================================
+        // �🌳 ÁRVORE DE AGENTES
+        // ============================================================================
+        
+        async function loadAgentsTree() {
+            const treeContainer = document.getElementById('treeContainer');
+            
+            try {
+                const response = await fetch('/api/factory/agents', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar agentes');
+                }
+                
+                const data = await response.json();
+                agentsData = data;
+                window.agentsTreeLoaded = true;
+                
+                renderAgentsTree(data);
+                
+            } catch (error) {
+                console.error('Erro ao carregar árvore:', error);
+                treeContainer.innerHTML = `
+                    <div class="tree-empty">
+                        <div class="tree-empty-icon">⚠️</div>
+                        <div class="tree-empty-text">Erro ao carregar estrutura de agentes</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderAgentsTree(data) {
+            const treeContainer = document.getElementById('treeContainer');
+            
+            if (!data.agents || data.agents.length === 0) {
+                treeContainer.innerHTML = `
+                    <div class="tree-empty">
+                        <div class="tree-empty-icon">🤖</div>
+                        <div class="tree-empty-text">Nenhum agente encontrado</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Separar coordenadores e subagentes
+            const coordinators = data.agents.filter(a => a.type === 'coordinator');
+            const subagents = data.agents.filter(a => a.type === 'subagent');
+            
+            let html = '<div class="tree-container">';
+            
+            // NÍVEL 1: Neoson (Orquestrador Principal)
+            html += `
+                <div class="tree-level">
+                    <div class="tree-level-title">🤖 Orquestrador Principal</div>
+                    ${renderNeosonCard(coordinators.length, subagents.length)}
+                </div>
+            `;
+            
+            // Conector
+            if (coordinators.length > 0) {
+                html += '<div class="tree-connector"></div>';
+            }
+            
+            // NÍVEL 2: Coordenadores
+            if (coordinators.length > 0) {
+                html += `
+                    <div class="tree-level">
+                        <div class="tree-level-title">👥 Coordenadores</div>
+                `;
+                
+                coordinators.forEach(coordinator => {
+                    html += renderCoordinatorCard(coordinator, subagents);
+                });
+                
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            treeContainer.innerHTML = html;
+            
+            // Adicionar event listeners para expandir/recolher
+            setupTreeToggles();
+        }
+        
+        function renderNeosonCard(coordCount, subagentCount) {
+            // Armazenar dados do Neoson no cache
+            const neosonData = {
+                identifier: 'neoson',
+                name: 'Neoson',
+                specialty: 'Orquestrador Multi-Agente',
+                type: 'orquestrador',
+                description: 'Sistema inteligente que analisa perguntas e delega automaticamente para o especialista mais adequado.',
+                keywords: ['orquestração', 'delegação', 'análise', 'roteamento', 'multi-agente'],
+                stats: {
+                    coordinators: coordCount,
+                    subagents: subagentCount
+                }
+            };
+            
+            if (!window.agentDataCache) window.agentDataCache = {};
+            window.agentDataCache['neoson'] = neosonData;
+            
+            return `
+                <div class="agent-tree-card neoson" data-agent-id="neoson" onclick="showAgentDetailsById('neoson')">
+                    <div class="agent-card-header">
+                        <div class="agent-tree-icon">🧠</div>
+                        <div class="agent-tree-info">
+                            <h3 class="agent-tree-name">Neoson</h3>
+                            <p class="agent-tree-specialty">Orquestrador Multi-Agente</p>
+                            <span class="agent-type-badge orquestrador">Orquestrador</span>
+                        </div>
+                    </div>
+                    <p class="agent-tree-description">
+                        Sistema inteligente que analisa perguntas e delega automaticamente para o especialista mais adequado.
+                    </p>
+                    <div class="agent-tree-stats">
+                        <div class="agent-tree-stat">
+                            <i class="fas fa-users"></i>
+                            <span>${coordCount} ${coordCount === 1 ? 'coordenador' : 'coordenadores'}</span>
+                        </div>
+                        <div class="agent-tree-stat">
+                            <i class="fas fa-robot"></i>
+                            <span>${subagentCount} ${subagentCount === 1 ? 'especialista' : 'especialistas'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderCoordinatorCard(coordinator, allSubagents) {
+            const children = coordinator.children || [];
+            const childrenAgents = allSubagents.filter(s => children.includes(s.identifier));
+            const icon = getAgentIcon(coordinator.specialty);
+            
+            console.log(`📋 Renderizando coordenador: ${coordinator.name}`);
+            console.log(`   Filhos declarados (${children.length}):`, children);
+            console.log(`   Subagentes disponíveis (${allSubagents.length}):`, allSubagents.map(s => s.identifier));
+            console.log(`   Filhos encontrados (${childrenAgents.length}):`, childrenAgents.map(s => s.identifier));
+            
+            // Detectar filhos faltando
+            const missingChildren = children.filter(childId => !allSubagents.find(s => s.identifier === childId));
+            if (missingChildren.length > 0) {
+                console.warn(`   ⚠️ Filhos não encontrados: ${missingChildren.join(', ')}`);
+            }
+            
+            // Armazenar dados do coordenador para acesso posterior
+            const coordId = `coord-${coordinator.identifier}`;
+            if (!window.agentDataCache) window.agentDataCache = {};
+            window.agentDataCache[coordId] = coordinator;
+            
+            return `
+                <div class="coordinator-wrapper" id="${coordId}">
+                    <button class="coordinator-toggle" onclick="toggleCoordinator('${coordinator.identifier}')">
+                        <div class="agent-tree-card coordinator" data-agent-id="${coordId}" onclick="event.stopPropagation(); showAgentDetailsById('${coordId}')">
+                            <div class="agent-card-header">
+                                <div class="agent-tree-icon">${icon}</div>
+                                <div class="agent-tree-info">
+                                    <h3 class="agent-tree-name">${coordinator.name}</h3>
+                                    <p class="agent-tree-specialty">${coordinator.specialty}</p>
+                                    <span class="agent-type-badge coordenador">Coordenador</span>
+                                </div>
+                            </div>
+                            ${coordinator.description ? `<p class="agent-tree-description">${coordinator.description}</p>` : ''}
+                            <div class="agent-tree-stats">
+                                <div class="agent-tree-stat">
+                                    <i class="fas fa-sitemap"></i>
+                                    <span>${children.length} ${children.length === 1 ? 'subordinado' : 'subordinados'}</span>
+                                </div>
+                                ${coordinator.keywords && coordinator.keywords.length > 0 ? `
+                                <div class="agent-tree-stat">
+                                    <i class="fas fa-tags"></i>
+                                    <span>${coordinator.keywords.length} keywords</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="toggle-icon">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </button>
+                    
+                    <div class="subagents-container">
+                        <div class="subagents-grid">
+                            ${childrenAgents.map(subagent => renderSubagentCard(subagent)).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderSubagentCard(subagent) {
+            const icon = getAgentIcon(subagent.specialty);
+            const keywordsPreview = subagent.keywords ? subagent.keywords.slice(0, 3) : [];
+            
+            // Armazenar dados do subagente para acesso posterior
+            const subagentId = `subagent-${subagent.identifier}`;
+            if (!window.agentDataCache) window.agentDataCache = {};
+            window.agentDataCache[subagentId] = subagent;
+            
+            return `
+                <div class="agent-tree-card subagent" data-agent-id="${subagentId}" onclick="showAgentDetailsById('${subagentId}')">
+                    <div class="agent-card-header">
+                        <div class="agent-tree-icon">${icon}</div>
+                        <div class="agent-tree-info">
+                            <h3 class="agent-tree-name">${subagent.name}</h3>
+                            <p class="agent-tree-specialty">${subagent.specialty}</p>
+                            <span class="agent-type-badge subagente">Subagente</span>
+                        </div>
+                    </div>
+                    ${subagent.description ? `<p class="agent-tree-description">${subagent.description}</p>` : ''}
+                    ${keywordsPreview.length > 0 ? `
+                    <div class="agent-tree-keywords">
+                        ${keywordsPreview.map(kw => `<span class="tree-keyword-tag">${kw}</span>`).join('')}
+                        ${subagent.keywords && subagent.keywords.length > 3 ? `<span class="tree-keyword-tag">+${subagent.keywords.length - 3}</span>` : ''}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function getAgentIcon(specialty) {
+            const lowerSpecialty = specialty.toLowerCase();
+            
+            const iconMap = {
+                'desenvolvimento': '💻',
+                'dev': '💻',
+                'suporte': '🎧',
+                'usuario': '🎧',
+                'governança': '⚖️',
+                'governance': '⚖️',
+                'recursos humanos': '👥',
+                'rh': '👥',
+                'ti': '🖥️',
+                'tecnologia': '🖥️',
+                'coordenação': '🎯',
+                'string': '📝'
+            };
+            
+            for (const [key, icon] of Object.entries(iconMap)) {
+                if (lowerSpecialty.includes(key)) {
+                    return icon;
+                }
+            }
+            
+            return '🤖';
+        }
+        
+        function showAgentDetailsById(agentId) {
+            // Buscar dados do cache
+            if (window.agentDataCache && window.agentDataCache[agentId]) {
+                showAgentDetails(window.agentDataCache[agentId]);
+            } else {
+                console.error('Dados do agente não encontrados no cache:', agentId);
+            }
+        }
+        
+        function escapeJSON(obj) {
+            return JSON.stringify(obj).replace(/'/g, "\\'");
+        }
+        
+        function setupTreeToggles() {
+            // Os event listeners já estão inline no HTML
+        }
+        
+        function toggleCoordinator(coordinatorId) {
+            const wrapper = document.getElementById(`coord-${coordinatorId}`);
+            if (wrapper) {
+                wrapper.classList.toggle('expanded');
+            }
+        }
+        
+        // ============================================================================
+        // 📋 MODAL DE DETALHES DO AGENTE
+        // ============================================================================
+        
+        function showAgentDetails(agent) {
+            currentAgentData = agent;
+            
+            const modal = document.getElementById('agentModal');
+            const icon = getAgentIcon(agent.specialty);
+            
+            // Header
+            document.getElementById('modalIcon').textContent = icon;
+            document.getElementById('modalName').textContent = agent.name;
+            document.getElementById('modalSpecialty').textContent = agent.specialty;
+            
+            // Badge de tipo
+            const typeBadge = document.getElementById('modalTypeBadge');
+            const typeMap = {
+                'coordinator': 'coordenador',
+                'coordenador': 'coordenador',
+                'subagent': 'subagente',
+                'subagente': 'subagente',
+                'orquestrador': 'orquestrador'
+            };
+            const typeClass = typeMap[agent.type] || 'subagente';
+            typeBadge.className = `agent-type-badge ${typeClass}`;
+            typeBadge.textContent = typeClass.charAt(0).toUpperCase() + typeClass.slice(1);
+            
+            // Descrição
+            if (agent.description) {
+                document.getElementById('modalDescriptionSection').style.display = 'block';
+                document.getElementById('modalDescription').textContent = agent.description;
+            } else {
+                document.getElementById('modalDescriptionSection').style.display = 'none';
+            }
+            
+            // Informações técnicas
+            document.getElementById('modalIdentifier').textContent = agent.identifier || '-';
+            document.getElementById('modalType').textContent = agent.type || '-';
+            
+            // Base de dados (apenas para subagentes)
+            const tableSection = document.getElementById('modalTableSection');
+            if (agent.table_name) {
+                tableSection.style.display = 'block';
+                document.getElementById('modalTable').textContent = agent.table_name;
+            } else {
+                tableSection.style.display = 'none';
+            }
+            
+            // Subordinados (apenas para coordenadores)
+            const childrenSection = document.getElementById('modalChildrenSection');
+            if (agent.children && agent.children.length > 0) {
+                childrenSection.style.display = 'block';
+                document.getElementById('modalChildren').textContent = agent.children.length;
+            } else if (agent.stats && (agent.stats.coordinators || agent.stats.subagents)) {
+                childrenSection.style.display = 'block';
+                document.getElementById('modalChildren').textContent = 
+                    `${agent.stats.coordinators || 0} coord. + ${agent.stats.subagents || 0} sub.`;
+            } else {
+                childrenSection.style.display = 'none';
+            }
+            
+            // Keywords
+            const keywordsSection = document.getElementById('modalKeywordsSection');
+            const keywordsContainer = document.getElementById('modalKeywords');
+            if (agent.keywords && agent.keywords.length > 0) {
+                keywordsSection.style.display = 'block';
+                keywordsContainer.innerHTML = agent.keywords
+                    .map(kw => `<span class="tree-keyword-tag">${kw}</span>`)
+                    .join('');
+            } else {
+                keywordsSection.style.display = 'none';
+            }
+            
+            // Mostrar modal
+            modal.classList.add('active');
+        }
+        
+        function closeAgentModal() {
+            const modal = document.getElementById('agentModal');
+            modal.classList.remove('active');
+            currentAgentData = null;
+        }
+        
+        function startChatWithAgent() {
+            if (currentAgentData) {
+                // Voltar para o chat
+                showTab('chat');
+                
+                // Fechar modal
+                closeAgentModal();
+                
+                // Colocar mensagem sugerida no input
+                const agentName = currentAgentData.name;
+                messageInput.value = `Olá! Gostaria de conversar com ${agentName}`;
+                messageInput.focus();
+                
+                // Auto-ajustar altura do textarea
+                messageInput.style.height = 'auto';
+                messageInput.style.height = messageInput.scrollHeight + 'px';
+                
+                // Habilitar botão de enviar
+                sendBtn.disabled = false;
+            }
+        }
+        
+        // Fechar modal ao clicar fora
+        document.getElementById('agentModal').addEventListener('click', function(e) {
+            if (e.target.id === 'agentModal') {
+                closeAgentModal();
+            }
+        });
+        
+        // Fechar modal com ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('agentModal');
+                if (modal.classList.contains('active')) {
+                    closeAgentModal();
+                }
+            }
+        });
+        
+        // 🔥 Expor funções globalmente para integração com Factory
+        window.loadAgentsTree = loadAgentsTree;
+        console.log('✅ loadAgentsTree exposta globalmente');
+    </script>
+
+    <!-- Script de Gerenciamento de Preferências -->
+    <script src="/static/preferences.js"></script>
+    
+    <!-- Marked.js - Renderização de Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.0.0/marked.min.js"></script>
+    
+    <!-- Highlight.js - Syntax Highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Script de Gerenciamento de Base de Conhecimento -->
+    <script src="/static/knowledge.js"></script>
+    
+    <!-- Script de Gerenciamento do Agent Factory -->
+    <script src="/static/factory.js?v=1.1.3"></script>
 </body>
 </html>

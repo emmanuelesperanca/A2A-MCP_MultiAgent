@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Neoson AI Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Faixa Alpha - Em Desenvolvimento */
+        .alpha-banner {
+            position: fixed;
+            top: 24px;
+            right: -80px;
+            z-index: 9999;
+            width: 340px;
+            height: 48px;
+            background: repeating-linear-gradient(135deg, #9e8712 0 20px, #222 20px 40px);
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+            line-height: 48px;
+            transform: rotate(20deg);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+            border-radius: 8px;
+            letter-spacing: 1px;
+            border: 2px solid #222;
+            pointer-events: none;
+        }
+        /* === VARIÁVEIS CSS - DESIGN SYSTEM === */
+        :root {
+            --color-primary: #75246a;
+            --color-secondary: #47ad8a;
+            --gradient-background: linear-gradient(90deg, #75246a 0%, #47ad8a 100%);
+            --text-primary: #ffffff;
+            --text-on-card: #333333;
+            --button-bg: #ffffff;
+            --button-text: #75246a;
+            --input-bg: rgba(255, 255, 255, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gradient-background);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 450px;
+            padding: 50px 40px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            font-size: 64px;
+            background: var(--gradient-background);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .logo-section h1 {
+            font-size: 32px;
+            color: var(--text-on-card);
+            margin-bottom: 8px;
+        }
+
+        .logo-section p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-on-card);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 16px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 15px 14px 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(117, 36, 106, 0.1);
+        }
+
+        .user-type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .user-type-option {
+            position: relative;
+        }
+
+        .user-type-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .user-type-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .user-type-label i {
+            font-size: 32px;
+            margin-bottom: 8px;
+            color: #999;
+            transition: all 0.3s ease;
+        }
+
+        .user-type-label span {
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .user-type-option input[type="radio"]:checked + .user-type-label {
+            border-color: var(--color-primary);
+            background: linear-gradient(135deg, rgba(117, 36, 106, 0.1), rgba(71, 173, 138, 0.1));
+        }
+
+        .user-type-option input[type="radio"]:checked + .user-type-label i {
+            color: var(--color-primary);
+        }
+
+        .user-type-option input[type="radio"]:checked + .user-type-label span {
+            color: var(--color-primary);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(117, 36, 106, 0.4);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-error {
+            background: #fee;
+            color: #c33;
+            border-left: 4px solid #c33;
+        }
+
+        .alert-success {
+            background: #efe;
+            color: #3c3;
+            border-left: 4px solid #3c3;
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .forgot-password {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 30px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .loading-spinner {
+            display: none;
+            margin-left: 10px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="alpha-banner">Versão Alpha - Em Desenvolvimento</div>
+    <div class="login-container">
+        <div class="logo-section">
+            <div class="logo-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h1>Neoson AI</h1>
+            <p>Multi-Agent Intelligence Platform</p>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <form id="loginForm">
+            <div class="user-type-selector">
+                <div class="user-type-option">
+                    <input type="radio" id="userTypeAdmin" name="userType" value="admin" checked>
+                    <label for="userTypeAdmin" class="user-type-label">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Administrador</span>
+                    </label>
+                </div>
+                <div class="user-type-option">
+                    <input type="radio" id="userTypeUser" name="userType" value="user">
+                    <label for="userTypeUser" class="user-type-label">
+                        <i class="fas fa-user"></i>
+                        <span>Usuário</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Usuário</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" class="form-control" placeholder="Digite seu usuário" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" class="form-control" placeholder="Digite sua senha" required>
+                </div>
+            </div>
+
+            <div class="remember-forgot">
+                <label class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <span>Lembrar-me</span>
+                </label>
+                <a href="#" class="forgot-password">Esqueci minha senha</a>
+            </div>
+
+            <button type="submit" class="btn-login" id="btnLogin">
+                <span class="btn-content">
+                    <span id="btnText">Entrar</span>
+                    <span class="loading-spinner" id="loadingSpinner">
+                        <span class="spinner"></span>
+                    </span>
+                </span>
+            </button>
+        </form>
+
+        <div class="footer-text">
+            © 2025 Neoson AI Platform - Todos os direitos reservados
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const alertBox = document.getElementById('alertBox');
+        const btnLogin = document.getElementById('btnLogin');
+        const btnText = document.getElementById('btnText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        function showAlert(message, type = 'error') {
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = message;
+            alertBox.style.display = 'block';
+
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
+        }
+
+        function setLoading(isLoading) {
+            btnLogin.disabled = isLoading;
+            if (isLoading) {
+                btnText.textContent = 'Entrando...';
+                loadingSpinner.style.display = 'inline-block';
+            } else {
+                btnText.textContent = 'Entrar';
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const userType = document.querySelector('input[name="userType"]:checked').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            if (!username || !password) {
+                showAlert('Por favor, preencha todos os campos', 'error');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        user_type: userType
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Validar token JWT antes de salvar
+                    const token = data.token;
+                    if (!token || token.split('.').length !== 3) {
+                        showAlert('Token inválido recebido do servidor', 'error');
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Salvar token e informações do usuário
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('neoson_user', JSON.stringify({
+                        username: data.username,
+                        user_type: data.user_type
+                    }));
+
+                    if (rememberMe) {
+                        localStorage.setItem('neoson_remember', 'true');
+                    }
+
+                    showAlert('Login realizado com sucesso! Redirecionando...', 'success');
+
+                    // Redirecionar após 1 segundo
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+
+                } else {
+                    showAlert(data.message || 'Usuário ou senha incorretos', 'error');
+                    setLoading(false);
+                }
+
+            } catch (error) {
+                console.error('Erro ao fazer login:', error);
+                showAlert('Erro ao conectar com o servidor. Tente novamente.', 'error');
+                setLoading(false);
+            }
+        });
+
+        // Auto-preencher se lembrar
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('neoson_remember') === 'true') {
+                const savedUser = JSON.parse(localStorage.getItem('neoson_user') || '{}');
+                if (savedUser.username) {
+                    document.getElementById('username').value = savedUser.username;
+                    document.getElementById('rememberMe').checked = true;
+                }
+            }
+
+            // Verificar se já está logado
+            const token = localStorage.getItem('token');
+            if (token && token.split('.').length === 3) {
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>

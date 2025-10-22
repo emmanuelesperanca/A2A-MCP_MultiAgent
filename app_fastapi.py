@@ -4,31 +4,42 @@ Backend completamente assíncrono para escalabilidade máxima
 Substitui o app.py Flask por uma solução moderna e performática
 """
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, validator
-from typing import Optional, Dict, List
-from datetime import datetime
+from typing import Optional, Dict, List, Any
+from datetime import datetime, timedelta
 import asyncio
 import logging
 import time
 import uuid
+import jwt
+from jwt.exceptions import InvalidTokenError, ExpiredSignatureError, DecodeError
+import secrets
 from contextlib import asynccontextmanager
 
 # Core configuration
 from core.config import config, print_config_summary
 
 # Importa o sistema Neoson assíncrono
-from neoson_async import criar_neoson_async
+from agentes.neoson.neoson_async import criar_neoson_async
 
 # Importa o sistema de feedback
 from core.feedback_system import FeedbackSystem, get_feedback_system
 
 # Importa o sistema de enriquecimento de respostas
 from core.enrichment_system import ResponseEnricher, create_faqs_table, save_faq
+
+# Importa Agent Factory
+from factory.agent_factory import create_subagent_from_config, create_coordinator_from_config
+from factory.agent_registry import get_registry
+
+# Importa API de Knowledge
+from api_knowledge import router as knowledge_router
 
 # Configurar logging
 logging.basicConfig(
@@ -41,6 +52,46 @@ logger = logging.getLogger(__name__)
 neoson_sistema = None
 feedback_system = None
 response_enricher = None
+
+# ============================================================================
+# CONFIGURAÇÕES DE AUTENTICAÇÃO
+# ============================================================================
+
+# Secret key para JWT (em produção, use variável de ambiente!)
+SECRET_KEY = secrets.token_urlsafe(32)
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 horas
+
+# Credenciais de teste (em produção, use banco de dados!)
+USUARIOS_DB = {
+    "admin": {
+        "username": "admin",
+        "password": "admin123",  # Em produção, use hash bcrypt!
+        "user_type": "admin",
+        "full_name": "Administrador do Sistema"
+    },
+    "user": {
+        "username": "user",
+        "password": "user123",
+        "user_type": "user",
+        "full_name": "Usuário Padrão"
+    },
+    "joao": {
+        "username": "joao",
+        "password": "joao123",
+        "user_type": "user",
+        "full_name": "João Silva"
+    },
+    "maria": {
+        "username": "maria",
+        "password": "maria123",
+        "user_type": "admin",
+        "full_name": "Maria Santos"
+    }
+}
+
+# Security
+security = HTTPBearer()
 
 # Perfis de teste para a aplicação
 PERFIS_TESTE = {
@@ -80,6 +131,29 @@ PERFIS_TESTE = {
 
 
 # Models Pydantic para validação
+
+# Modelos de Autenticação
+class LoginRequest(BaseModel):
+    """Modelo para requisição de login"""
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=3, max_length=100)
+    user_type: str = Field("user", description="Tipo de usuário (admin ou user)")
+
+class LoginResponse(BaseModel):
+    """Modelo para resposta de login"""
+    success: bool
+    token: str
+    username: str
+    user_type: str
+    message: str
+
+class TokenData(BaseModel):
+    """Dados contidos no token JWT"""
+    username: str
+    user_type: str
+    exp: int
+
+# Modelos de Chat
 class ChatRequest(BaseModel):
     """Modelo para requisição de chat"""
     mensagem: str = Field(..., min_length=1, max_length=1000)
@@ -268,6 +342,9 @@ app.add_middleware(
 # Configurar templates
 templates = Jinja2Templates(directory="templates")
 
+# Incluir routers
+app.include_router(knowledge_router)
+
 
 # Exception handlers
 @app.exception_handler(HTTPException)
@@ -287,6 +364,233 @@ async def general_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"erro": f"Erro interno: {str(exc)}"}
     )
+
+
+# ============================================================================
+# AUTENTICAÇÃO - FUNÇÕES AUXILIARES
+# ============================================================================
+
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    """Cria um token JWT"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    to_encode.update({"exp": int(expire.timestamp())})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def verify_token(token: str) -> Optional[dict]:
+    """Verifica e decodifica um token JWT"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except ExpiredSignatureError:
+        logger.warning("Token expirado")
+        return None
+    except DecodeError as e:
+        logger.warning(f"Erro ao decodificar token: {e}")
+        return None
+    except InvalidTokenError as e:
+        logger.warning(f"Token inválido: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Erro inesperado ao verificar token: {e}")
+        return None
+
+
+def authenticate_user(username: str, password: str) -> Optional[dict]:
+    """Autentica um usuário"""
+    user = USUARIOS_DB.get(username)
+    if not user:
+        return None
+    if user['password'] != password:  # Em produção, use bcrypt!
+        return None
+    return user
+
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    """Dependency para obter usuário atual do token"""
+    token = credentials.credentials
+    payload = verify_token(token)
+    
+    if payload is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Token inválido ou expirado"
+        )
+    
+    username = payload.get("username")
+    user = USUARIOS_DB.get(username)
+    
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Usuário não encontrado"
+        )
+    
+    return user
+
+
+async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    """Dependency que requer usuário admin"""
+    if current_user.get("user_type") != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Acesso negado. Apenas administradores podem acessar este recurso."
+        )
+    return current_user
+
+
+# ============================================================================
+# AUTENTICAÇÃO - ENDPOINTS
+# ============================================================================
+
+@app.post("/api/auth/login", response_model=LoginResponse)
+async def login(request: LoginRequest):
+    """
+    Endpoint de login
+    
+    Credenciais de teste:
+    - admin/admin123 (administrador)
+    - user/user123 (usuário comum)
+    - joao/joao123 (usuário comum)
+    - maria/maria123 (administrador)
+    """
+    user = authenticate_user(request.username, request.password)
+    
+    if not user:
+        return LoginResponse(
+            success=False,
+            token="",
+            username="",
+            user_type="",
+            message="Usuário ou senha incorretos"
+        )
+    
+    # Criar token
+    access_token = create_access_token(
+        data={"username": user["username"], "user_type": user["user_type"]}
+    )
+    
+    logger.info(f"✅ Login bem-sucedido: {user['username']} ({user['user_type']})")
+    
+    return LoginResponse(
+        success=True,
+        token=access_token,
+        username=user["username"],
+        user_type=user["user_type"],
+        message=f"Bem-vindo, {user['full_name']}!"
+    )
+
+
+@app.post("/api/auth/verify")
+async def verify_auth(current_user: dict = Depends(get_current_user)):
+    """Verifica se o token ainda é válido"""
+    return {
+        "success": True,
+        "username": current_user["username"],
+        "user_type": current_user["user_type"],
+        "full_name": current_user["full_name"]
+    }
+
+
+@app.post("/api/auth/logout")
+async def logout(current_user: dict = Depends(get_current_user)):
+    """Endpoint de logout (apenas para consistência, JWT é stateless)"""
+    logger.info(f"👋 Logout: {current_user['username']}")
+    return {
+        "success": True,
+        "message": "Logout realizado com sucesso"
+    }
+
+
+@app.get("/api/user")
+async def get_user_info(current_user: dict = Depends(get_current_user)):
+    """Retorna informações do usuário autenticado"""
+    return {
+        "success": True,
+        "username": current_user["username"],
+        "full_name": current_user["full_name"],
+        "role": current_user["user_type"],
+        "user_type": current_user["user_type"]
+    }
+
+
+@app.post("/api/chat")
+async def api_chat(request: ChatRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Endpoint de chat para a nova interface
+    Processa mensagem do usuário e retorna resposta do Neoson
+    """
+    if neoson_sistema is None:
+        raise HTTPException(status_code=500, detail='Sistema Neoson não inicializado')
+    
+    try:
+        # Usar perfil padrão baseado no tipo de usuário
+        perfil = {
+            "Nome": current_user.get("full_name", current_user["username"]),
+            "Cargo": "Gerente" if current_user["user_type"] == "admin" else "Colaborador",
+            "Departamento": "Geral",
+            "Nivel_Acesso": current_user["user_type"]
+        }
+        
+        logger.info(f"💬 Chat - Usuário: {current_user['username']}, Mensagem: '{request.mensagem[:50]}...'")
+        
+        # Processar pergunta de forma assíncrona
+        resultado = await neoson_sistema.processar_pergunta_async(request.mensagem, perfil)
+        
+        if resultado['sucesso']:
+            resposta_texto = resultado['resposta']
+            
+            # Separar resposta da cadeia de raciocínio se houver
+            cadeia_separador = "="*60
+            if cadeia_separador in resposta_texto:
+                partes = resposta_texto.split(cadeia_separador, 1)
+                resposta_principal = partes[0].strip()
+                cadeia_raciocinio = cadeia_separador + partes[1]
+            else:
+                resposta_principal = resposta_texto
+                cadeia_raciocinio = None
+            
+            logger.info(f"✅ Resposta gerada: {len(resposta_principal)} caracteres")
+            
+            return {
+                "success": True,
+                "response": resposta_principal,
+                "cadeia_raciocinio": cadeia_raciocinio,
+                "agent_usado": resultado.get('agente_usado', 'Neoson'),
+                "classificacao": resultado.get('classificacao', 'Geral'),
+                "especialidade": resultado.get('especialidade', 'Geral')
+            }
+        else:
+            logger.error(f"❌ Erro ao processar: {resultado.get('erro', 'Erro desconhecido')}")
+            raise HTTPException(
+                status_code=500,
+                detail=resultado.get('erro', 'Erro ao processar mensagem')
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"❌ Erro inesperado no chat: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar mensagem: {str(e)}"
+        )
+
+
+# ============================================================================
+# ROTAS PRINCIPAIS
+# ============================================================================
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    """Página de login"""
+    return templates.TemplateResponse("login.html", {"request": request})
 
 
 # Rotas
@@ -1070,6 +1374,396 @@ async def get_dashboard_analytics(
 
 # ============================================================================
 # FIM DOS ENDPOINTS DE DASHBOARD
+# ============================================================================
+
+
+# ============================================================================
+# ENDPOINTS DA AGENT FACTORY
+# ============================================================================
+
+class CreateSubagentRequest(BaseModel):
+    """Request para criar subagente"""
+    name: str = Field(..., description="Nome do agente (ex: 'Carlos', 'Marina')")
+    identifier: str = Field(..., description="ID único (ex: 'dev', 'enduser')")
+    specialty: str = Field(..., description="Especialidade (ex: 'Desenvolvimento', 'Suporte')")
+    description: str = Field(..., description="Descrição detalhada do agente")
+    keywords: List[str] = Field(..., description="Palavras-chave relacionadas")
+    parent_coordinator: Optional[str] = Field(None, description="ID do coordenador pai (ex: 'ti_coordinator', 'rh')")
+    table_name: Optional[str] = Field(None, description="Nome da tabela (default: knowledge_{identifier})")
+    prompt_template: Optional[str] = Field(None, description="Template customizado do prompt")
+    enable_mcp_tools: bool = Field(False, description="Habilitar ferramentas MCP")
+    mcp_tools_category: Optional[str] = Field(None, description="Categoria das ferramentas MCP")
+    allowed_tools: List[str] = Field(default_factory=list, description="Lista de ferramentas permitidas")
+    llm_model: str = Field("gpt-4o-mini", description="Modelo LLM a usar")
+    llm_temperature: float = Field(0.3, description="Temperatura do LLM")
+    llm_max_tokens: int = Field(10000, description="Máximo de tokens")
+
+
+class CreateCoordinatorRequest(BaseModel):
+    """Request para criar coordenador"""
+    name: str = Field(..., description="Nome do coordenador (ex: 'Coordenador TI')")
+    identifier: str = Field(..., description="ID único (ex: 'ti', 'rh')")
+    specialty: str = Field(..., description="Especialidade (ex: 'TI', 'Recursos Humanos')")
+    description: str = Field(..., description="Descrição detalhada do coordenador")
+    children_agents: List[str] = Field(..., description="Lista de IDs dos agentes filhos")
+
+
+class AgentFactoryResponse(BaseModel):
+    """Response da criação de agente"""
+    success: bool
+    identifier: str
+    file_path: Optional[str] = None
+    table_name: Optional[str] = None
+    children: Optional[List[str]] = None
+    message: str = ""
+    error: Optional[str] = None
+
+
+class AgentListResponse(BaseModel):
+    """Response da listagem de agentes"""
+    total: int
+    subagents: int
+    coordinators: int
+    with_mcp_tools: int
+    agents: List[Dict[str, Any]]
+
+
+class RegistryStatsResponse(BaseModel):
+    """Response das estatísticas do registry"""
+    total: int
+    subagents: int
+    coordinators: int
+    with_mcp_tools: int
+    agents: List[str]
+
+
+@app.post("/api/factory/create-subagent", response_model=AgentFactoryResponse)
+async def create_subagent(request: CreateSubagentRequest):
+    """
+    Cria um novo subagent via Agent Factory
+    
+    Args:
+        request: Dados do subagente a criar
+    
+    Returns:
+        Resultado da criação do subagente
+    
+    Example:
+        ```json
+        {
+            "name": "Roberto",
+            "identifier": "servicedesk",
+            "specialty": "Service Desk",
+            "description": "Especialista em atendimento e suporte técnico",
+            "keywords": ["suporte", "ticket", "chamado", "help desk"],
+            "parent_coordinator": "ti_coordinator",
+            "enable_mcp_tools": true,
+            "mcp_tools_category": "servicedesk",
+            "allowed_tools": ["create_ticket", "get_ticket_status"]
+        }
+        ```
+    """
+    try:
+        logger.info(f"🏭 [API] Criando subagente: {request.identifier}")
+        logger.info(f"   Nome: {request.name}")
+        logger.info(f"   Coordenador pai: {request.parent_coordinator}")
+        
+        result = await create_subagent_from_config(
+            name=request.name,
+            identifier=request.identifier,
+            specialty=request.specialty,
+            description=request.description,
+            keywords=request.keywords,
+            table_name=request.table_name,
+            prompt_template=request.prompt_template,
+            enable_mcp_tools=request.enable_mcp_tools,
+            mcp_tools_category=request.mcp_tools_category,
+            allowed_tools=request.allowed_tools,
+            llm_model=request.llm_model,
+            llm_temperature=request.llm_temperature,
+            llm_max_tokens=request.llm_max_tokens
+        )
+        
+        logger.info(f"📊 [API] Resultado da criação: success={result.get('success')}, error={result.get('error')}")
+        
+        # ⚠️ CRÍTICO: Só vincular ao coordenador se criação foi bem-sucedida
+        if not result.get('success'):
+            logger.error(f"❌ [API] Subagente NÃO foi criado com sucesso, abortando vinculação ao coordenador")
+            return AgentFactoryResponse(**result)
+        
+        # Se especificou um coordenador pai, adicionar o subagente como filho
+        if request.parent_coordinator:
+            try:
+                logger.info(f"🔗 [API] Vinculando subagente ao coordenador {request.parent_coordinator}...")
+                registry = get_registry()
+                coordinator = registry.get_agent(request.parent_coordinator)
+                
+                if coordinator:
+                    if coordinator.get('type') == 'coordinator':
+                        children = coordinator.get('children', [])
+                        if request.identifier not in children:
+                            children.append(request.identifier)
+                            registry.update_agent(request.parent_coordinator, {'children': children})
+                            logger.info(f"✅ Subagente {request.identifier} adicionado ao coordenador {request.parent_coordinator}")
+                        else:
+                            logger.info(f"ℹ️ Subagente {request.identifier} já estava no coordenador")
+                    else:
+                        logger.warning(f"⚠️ {request.parent_coordinator} não é um coordenador")
+                else:
+                    logger.warning(f"⚠️ Coordenador {request.parent_coordinator} não encontrado")
+            except Exception as e:
+                logger.error(f"❌ Erro ao vincular subagente ao coordenador: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        return AgentFactoryResponse(**result)
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao criar subagente: {e}")
+        import traceback
+        traceback.print_exc()
+        return AgentFactoryResponse(
+            success=False,
+            identifier=request.identifier,
+            message="Erro ao criar subagente",
+            error=str(e)
+        )
+
+
+@app.post("/api/factory/create-coordinator", response_model=AgentFactoryResponse)
+async def create_coordinator(request: CreateCoordinatorRequest):
+    """
+    Cria um novo coordenador via Agent Factory
+    
+    Args:
+        request: Dados do coordenador a criar
+    
+    Returns:
+        Resultado da criação do coordenador
+    
+    Example:
+        ```json
+        {
+            "name": "Coordenador de Vendas",
+            "identifier": "vendas",
+            "specialty": "Vendas e Comercial",
+            "description": "Coordena agentes de vendas, propostas e CRM",
+            "children_agents": ["crm", "propostas", "clientes"]
+        }
+        ```
+    """
+    try:
+        logger.info(f"🏭 [API] Criando coordenador: {request.identifier}")
+        
+        result = await create_coordinator_from_config(
+            name=request.name,
+            identifier=request.identifier,
+            specialty=request.specialty,
+            description=request.description,
+            children_agents=request.children_agents
+        )
+        
+        return AgentFactoryResponse(**result)
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao criar coordenador: {e}")
+        return AgentFactoryResponse(
+            success=False,
+            identifier=request.identifier,
+            message="Erro ao criar coordenador",
+            error=str(e)
+        )
+
+
+@app.get("/api/factory/agents", response_model=AgentListResponse)
+async def list_agents(agent_type: Optional[str] = None):
+    """
+    Lista todos os agentes criados via factory
+    
+    Args:
+        agent_type: Filtrar por tipo ('coordinator' ou 'subagent')
+    
+    Returns:
+        Lista de agentes registrados
+    """
+    try:
+        registry = get_registry()
+        
+        # 🔥 CRÍTICO: Recarregar dados do arquivo antes de listar
+        registry.reload()
+        
+        agents = registry.list_agents(agent_type=agent_type)
+        stats = registry.get_statistics()
+        
+        logger.info(f"📊 [API] Listando agentes: total={stats['total']}, subagents={stats['subagents']}, coordinators={stats['coordinators']}")
+        
+        return AgentListResponse(
+            total=stats['total'],
+            subagents=stats['subagents'],
+            coordinators=stats['coordinators'],
+            with_mcp_tools=stats['with_mcp_tools'],
+            agents=agents
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao listar agentes: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao listar agentes: {str(e)}")
+
+
+@app.get("/api/factory/agents/{identifier}")
+async def get_agent(identifier: str):
+    """
+    Retorna dados de um agente específico
+    
+    Args:
+        identifier: ID do agente
+    
+    Returns:
+        Dados do agente
+    """
+    try:
+        registry = get_registry()
+        agent = registry.get_agent(identifier)
+        
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agente '{identifier}' não encontrado")
+        
+        return agent
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Erro ao buscar agente: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar agente: {str(e)}")
+
+
+@app.delete("/api/factory/agents/{identifier}")
+async def delete_agent(identifier: str):
+    """
+    Remove um agente do registry
+    
+    Args:
+        identifier: ID do agente
+    
+    Returns:
+        Status da remoção
+    """
+    try:
+        registry = get_registry()
+        success = registry.delete_agent(identifier)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Agente '{identifier}' não encontrado")
+        
+        return {
+            "success": True,
+            "message": f"Agente '{identifier}' removido com sucesso",
+            "identifier": identifier
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Erro ao deletar agente: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao deletar agente: {str(e)}")
+
+
+@app.get("/api/factory/stats", response_model=RegistryStatsResponse)
+async def get_factory_stats():
+    """
+    Retorna estatísticas sobre os agentes criados
+    
+    Returns:
+        Estatísticas do registry
+    """
+    try:
+        registry = get_registry()
+        stats = registry.get_statistics()
+        
+        return RegistryStatsResponse(**stats)
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao obter estatísticas: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao obter estatísticas: {str(e)}")
+
+
+@app.get("/api/factory/frontend-config")
+async def get_frontend_config():
+    """
+    Exporta configuração de agentes para o frontend
+    
+    Returns:
+        Configuração formatada para o index.html
+    """
+    try:
+        registry = get_registry()
+        config = registry.export_to_frontend_config()
+        
+        return config
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao exportar config para frontend: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao exportar configuração: {str(e)}")
+
+
+# ============================================================================
+# ENDPOINT PARA SERVIR HTMLs DOS AGENTES
+# ============================================================================
+
+@app.get("/agents/{identifier}")
+async def serve_agent_page(identifier: str):
+    """
+    Serve a página HTML de um agente específico
+    
+    Args:
+        identifier: Identificador único do agente
+        
+    Returns:
+        HTML da página do agente
+    """
+    from fastapi.responses import FileResponse
+    from pathlib import Path
+    
+    try:
+        registry = get_registry()
+        agent = registry.get_agent(identifier)
+        
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agente '{identifier}' não encontrado")
+        
+        # Verificar se tem html_path no registro
+        html_path = agent.get("html_path")
+        
+        if not html_path:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Página HTML não encontrada para agente '{identifier}'"
+            )
+        
+        # Verificar se arquivo existe
+        html_file = Path(html_path)
+        
+        if not html_file.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Arquivo HTML não existe: {html_path}"
+            )
+        
+        return FileResponse(
+            path=html_file,
+            media_type="text/html",
+            headers={"Cache-Control": "no-cache"}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Erro ao servir página do agente {identifier}: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao carregar página: {str(e)}")
+
+
+# ============================================================================
+# FIM DOS ENDPOINTS DA AGENT FACTORY
 # ============================================================================
 
 

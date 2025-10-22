@@ -97,7 +97,7 @@ class ConfigManager:
             # Table names (usar os nomes reais das tabelas no banco)
             rh_table=self._get_env_var("KNOWLEDGE_RH_TABLE", "knowledge_hr"),
             ti_table=self._get_env_var("KNOWLEDGE_TI_TABLE", "knowledge_TECH"),
-            governance_table=self._get_env_var("KNOWLEDGE_GOVERNANCE_TABLE", "knowledge_IT GOVERNANCE & DELIVERY METHODS"),
+            governance_table=self._get_env_var("KNOWLEDGE_GOVERNANCE_TABLE", "knowledge_it_governance_delivery_methods"),
             infra_table=self._get_env_var("KNOWLEDGE_INFRA_TABLE", "knowledge_IT INFRASTRUCTURE & CLOUD"),
             dev_table=self._get_env_var("KNOWLEDGE_DEV_TABLE", "knowledge_ARCHITETURE & DEV"),
             enduser_table=self._get_env_var("KNOWLEDGE_ENDUSER_TABLE", "knowledge_END-USER")

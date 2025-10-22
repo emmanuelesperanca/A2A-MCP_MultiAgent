@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neoson - Sistema Multi-Agente de IA</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style_neoson.css">
+    <link rel="stylesheet" href="/static/theme_overrides.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</head>
+<body>
+    <!-- Cabeçalho do Neoson -->
+    <div class="neoson-header">
+        <div class="neoson-face">
+            <div class="neoson-antenna">
+                <div class="antenna-ball"></div>
+            </div>
+            <div class="neoson-eyes">
+                <div class="eye left-eye">
+                    <div class="pupil left-pupil"></div>
+                    <div class="eye-shine"></div>
+                </div>
+                <div class="eye right-eye">
+                    <div class="pupil right-pupil"></div>
+                    <div class="eye-shine"></div>
+                </div>
+            </div>
+            <div class="neoson-mouth">
+                <div class="mouth-line"></div>
+            </div>
+            <div class="thinking-indicator">
+                <div class="thinking-dot"></div>
+                <div class="thinking-dot"></div>
+                <div class="thinking-dot"></div>
+            </div>
+        </div>
+        
+        <div class="neoson-info">
+            <h1 class="neoson-name">NEOSON</h1>
+            <p class="neoson-subtitle">Sistema Multi-Agente de Inteligência Artificial</p>
+            <div class="status-indicator ready">
+                <i class="fas fa-circle"></i>
+                <span>Sistema Pronto</span>
+            </div>
+            <a href="/dashboard" target="_blank" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; transition: transform 0.2s;">
+                <i class="fas fa-chart-line"></i> Ver Dashboard Analytics
+            </a>
+        </div>
+    </div>
+
+    <!-- Sistema de Navegação por Abas -->
+    <div class="tabs-navigation" id="tabsNav">
+        <button class="tab-btn active" data-tab="chat">
+            <i class="fas fa-comments"></i>
+            <span>Chat</span>
+        </button>
+        <button class="tab-btn" data-tab="agents">
+            <i class="fas fa-sitemap"></i>
+            <span>Agentes</span>
+        </button>
+        <button class="tab-btn admin-only" data-tab="create-agent" style="display: none;">
+            <i class="fas fa-robot"></i>
+            <span>Criar Agente</span>
+        </button>
+        <button class="tab-btn admin-only" data-tab="ingest-data" style="display: none;">
+            <i class="fas fa-database"></i>
+            <span>Ingerir Dados</span>
+        </button>
+        <div class="tab-indicator"></div>
+        
+        <!-- Informações do Usuário e Logout -->
+        <div class="user-info">
+            <span id="userDisplay"></span>
+            <button class="logout-btn" id="logoutBtn" title="Sair">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Árvore Genealógica de Agentes (Dinâmica) -->
+    <div class="agents-tree-section tab-content" id="agents" style="display: none;">
+        <div class="tree-header">
+            <h2><i class="fas fa-sitemap"></i> Arquitetura Multi-Agente</h2>
+            <p>Estrutura hierárquica dos agentes especializados</p>
+            <button class="refresh-tree-btn" id="refreshTreeBtn" title="Recarregar árvore">
+                <i class="fas fa-sync-alt"></i> Atualizar
+            </button>
+        </div>
+        <div class="agents-tree" id="agentsTree">
+            <div class="tree-loading">
+                <div class="loading-spinner"></div>
+                <p>Carregando arquitetura de agentes...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (Chat Tab) -->
+    <div class="container tab-content active" id="chat">
+        <div class="main-content">
+            <!-- Persona Selection -->
+            <div class="persona-section">
+                <h2><i class="fas fa-user-tag"></i> Selecione ou Crie seu Perfil</h2>
+                
+                <!-- Botões de Alternância -->
+                <div class="persona-toggle">
+                    <button class="toggle-btn active" id="presetToggle">
+                        <i class="fas fa-users"></i> Perfis Pré-definidos
+                    </button>
+                    <button class="toggle-btn" id="customToggle">
+                        <i class="fas fa-user-plus"></i> Criar Persona Personalizada
+                    </button>
+                </div>
+
+                <!-- Perfis Pré-definidos -->
+                <div class="persona-grid" id="presetPersonas">
+                    <div class="persona-card selected" data-persona="Gerente">
+                        <div class="persona-header">
+                            <div class="persona-avatar gerente">👨‍💼</div>
+                            <div>
+                                <div class="persona-name">Gerente</div>
+                                <div class="persona-role">Liderança • Nível 3</div>
+                            </div>
+                        </div>
+                        <div class="persona-details">
+                            Perfil de gerência com acesso a informações estratégicas e dados de equipe.
+                        </div>
+                    </div>
+                    
+                    <div class="persona-card" data-persona="Funcionário">
+                        <div class="persona-header">
+                            <div class="persona-avatar funcionario">👨‍💻</div>
+                            <div>
+                                <div class="persona-name">Funcionário</div>
+                                <div class="persona-role">Operacional • Nível 2</div>
+                            </div>
+                        </div>
+                        <div class="persona-details">
+                            Perfil operacional com acesso a informações básicas e procedimentos padrão.
+                        </div>
+                    </div>
+
+                    <div class="persona-card" data-persona="Diretor">
+                        <div class="persona-header">
+                            <div class="persona-avatar diretor">👔</div>
+                            <div>
+                                <div class="persona-name">Diretor</div>
+                                <div class="persona-role">Executivo • Nível 5</div>
+                            </div>
+                        </div>
+                        <div class="persona-details">
+                            Perfil executivo com acesso total a informações estratégicas e confidenciais.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Criador de Persona Personalizada -->
+                <div class="custom-persona-creator" id="customPersonaCreator" style="display: none;">
+                    <div class="creator-grid">
+                        <div class="creator-section">
+                            <h3><i class="fas fa-user"></i> Informações Pessoais</h3>
+                            <div class="form-group">
+                                <label for="customName">Nome Completo</label>
+                                <input type="text" id="customName" placeholder="Ex: João Silva">
+                            </div>
+                            <div class="form-group">
+                                <label for="customRole">Cargo</label>
+                                <input type="text" id="customRole" placeholder="Ex: Analista de Sistemas">
+                            </div>
+                        </div>
+
+                        <div class="creator-section">
+                            <h3><i class="fas fa-building"></i> Informações Organizacionais</h3>
+                            <div class="form-group">
+                                <label for="customDepartment">Departamento</label>
+                                <select id="customDepartment">
+                                    <option value="">Selecione...</option>
+                                    <option value="RH">Recursos Humanos</option>
+                                    <option value="TI">Tecnologia da Informação</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Vendas">Vendas</option>
+                                    <option value="Financeiro">Financeiro</option>
+                                    <option value="Operações">Operações</option>
+                                    <option value="Jurídico">Jurídico</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="customLevel">Nível Hierárquico</label>
+                                <select id="customLevel">
+                                    <option value="">Selecione...</option>
+                                    <option value="1">Nível 1 - Estagiário</option>
+                                    <option value="2">Nível 2 - Junior</option>
+                                    <option value="3">Nível 3 - Pleno/Supervisor</option>
+                                    <option value="4">Nível 4 - Sênior/Gerente</option>
+                                    <option value="5">Nível 5 - Diretor/Executivo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="creator-section">
+                            <h3><i class="fas fa-globe"></i> Localização e Projetos</h3>
+                            <div class="form-group">
+                                <label for="customGeography">Geografia</label>
+                                <select id="customGeography">
+                                    <option value="">Selecione...</option>
+                                    <option value="BR">Brasil</option>
+                                    <option value="USA">Estados Unidos</option>
+                                    <option value="EU">Europa</option>
+                                    <option value="ASIA">Ásia</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="customProjects">Projetos</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="ALL" id="allProjects">
+                                        <span class="checkmark"></span>
+                                        Todos os Projetos
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="Apollo">
+                                        <span class="checkmark"></span>
+                                        Projeto Apollo
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="Phoenix">
+                                        <span class="checkmark"></span>
+                                        Projeto Phoenix
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="Neptune">
+                                        <span class="checkmark"></span>
+                                        Projeto Neptune
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="creator-actions">
+                        <button class="create-persona-btn" id="createPersonaBtn">
+                            <i class="fas fa-save"></i>
+                            Criar Persona
+                        </button>
+                        <button class="clear-form-btn" id="clearFormBtn">
+                            <i class="fas fa-trash"></i>
+                            Limpar Formulário
+                        </button>
+                    </div>
+
+                    <!-- Preview da Persona Criada -->
+                    <div class="persona-preview" id="personaPreview" style="display: none;">
+                        <h4><i class="fas fa-eye"></i> Preview da Persona</h4>
+                        <div class="preview-card">
+                            <div class="preview-avatar" id="previewAvatar">👤</div>
+                            <div class="preview-info">
+                                <div class="preview-name" id="previewName">Nome da Persona</div>
+                                <div class="preview-details" id="previewDetails">Detalhes da persona aparecerão aqui</div>
+                                <div class="preview-permissions">
+                                    <h5>Permissões de Acesso:</h5>
+                                    <div class="permission-tags" id="previewPermissions"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <h2><i class="fas fa-comments"></i> Converse com o Neoson</h2>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="welcome-message">
+                            <div class="message-avatar neoson-avatar">🤖</div>
+                            <div class="message-content">
+                                <h3>Bem-vindo ao Sistema Neoson!</h3>
+                                <p>Sou o Neoson, seu assistente inteligente multi-agente. Posso ajudar você com:</p>
+                                <ul>
+                                    <li><strong>Questões de RH:</strong> Delegarei para a Ana, especialista em recursos humanos</li>
+                                    <li><strong>Questões de TI:</strong> Sistema hierárquico com 4 sub-especialistas:
+                                        <ul class="sub-list">
+                                            <li>🏛️ <strong>Ariel (Governança):</strong> LGPD, Compliance, Delivery Methods</li>
+                                            <li>🖥️ <strong>Alice (Infraestrutura):</strong> Servidores, Redes, Monitoramento</li>
+                                            <li>⚡ <strong>Carlos (Desenvolvimento):</strong> APIs, Deploy, Arquitetura</li>
+                                            <li>🎧 <strong>Marina (Usuário Final):</strong> Senhas, Acessos, Suporte</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Coordenação Inteligente:</strong> Escolho automaticamente o melhor especialista</li>
+                                </ul>
+                                <p>Como posso ajudá-lo hoje?</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form class="chat-form" id="chatForm">
+                        <div class="input-group">
+                            <textarea
+                                id="mensagem"
+                                placeholder="Digite sua mensagem aqui... (Ctrl + Enter para enviar)"
+                                maxlength="1000"
+                                rows="3"
+                            ></textarea>
+                        </div>
+                        <div class="input-footer">
+                            <div class="char-counter">0/1000</div>
+                            <div class="send-area">
+                                <div class="processing-indicator" id="processingIndicator">
+                                    <div class="spinner"></div>
+                                    <span class="processing-text" id="processingText">Processando...</span>
+                                </div>
+                                <button type="submit" id="sendBtn">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Enviar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Memory Controls -->
+            <div class="memory-section">
+                <h2><i class="fas fa-brain"></i> Controle de Memória</h2>
+                <p>Limpe a memória de conversas quando necessário:</p>
+                <button class="clear-memory-btn" id="clearMemoryBtn">
+                    <i class="fas fa-trash-alt"></i>
+                    Limpar Memória
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aba: Criar Agente (Admin Only) -->
+    <div class="container tab-content" id="create-agent" style="display: none;">
+        <div class="create-agent-section">
+            <div class="section-header">
+                <h2><i class="fas fa-robot"></i> Criar Novo Agente</h2>
+                <p>Use a Agent Factory para criar novos agentes especializados de forma rápida e consistente</p>
+            </div>
+
+            <div class="agent-type-selector">
+                <button class="type-btn active" data-type="subagent">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Subagente Especializado</span>
+                    <small>Agente com conhecimento específico</small>
+                </button>
+                <button class="type-btn" data-type="coordinator">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Coordenador</span>
+                    <small>Gerencia múltiplos subagentes</small>
+                </button>
+            </div>
+
+            <!-- Formulário para Subagente -->
+            <div class="agent-form" id="subagentForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="agentName"><i class="fas fa-tag"></i> Nome do Agente</label>
+                        <input type="text" id="agentName" placeholder="Ex: Roberto - Service Desk" required>
+                        <small>Nome descritivo que será exibido na interface</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="agentIdentifier"><i class="fas fa-fingerprint"></i> Identificador Único</label>
+                        <input type="text" id="agentIdentifier" placeholder="Ex: servicedesk" required pattern="[a-z_]+">
+                        <small>ID único (apenas letras minúsculas e underscores)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="agentSpecialty"><i class="fas fa-star"></i> Especialidade</label>
+                        <input type="text" id="agentSpecialty" placeholder="Ex: Service Desk" required>
+                        <small>Área de conhecimento principal</small>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="agentDescription"><i class="fas fa-align-left"></i> Descrição</label>
+                        <textarea id="agentDescription" rows="3" placeholder="Descreva as responsabilidades e expertise do agente..." required></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="agentKeywords"><i class="fas fa-key"></i> Palavras-chave</label>
+                        <input type="text" id="agentKeywords" placeholder="suporte, ticket, chamado, help desk" required>
+                        <small>Separadas por vírgula - usadas para classificação de perguntas</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="parentCoordinator"><i class="fas fa-sitemap"></i> Coordenador Pai (Opcional)</label>
+                        <select id="parentCoordinator">
+                            <option value="">Sem coordenador (independente)</option>
+                            <!-- Preenchido dinamicamente -->
+                        </select>
+                        <small>Vincular a um coordenador existente</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="agentTableName"><i class="fas fa-database"></i> Nome da Tabela (Opcional)</label>
+                        <input type="text" id="agentTableName" placeholder="knowledge_servicedesk">
+                        <small>Se vazio, usa: knowledge_{identifier}</small>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="resetFormBtn">
+                        <i class="fas fa-undo"></i> Limpar
+                    </button>
+                    <button type="submit" class="btn-primary" id="createAgentBtn">
+                        <i class="fas fa-plus-circle"></i> Criar Agente
+                    </button>
+                </div>
+
+                <div class="creation-status" id="creationStatus" style="display: none;"></div>
+            </div>
+
+            <!-- Formulário para Coordenador -->
+            <div class="agent-form" id="coordinatorForm" style="display: none;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="coordName"><i class="fas fa-tag"></i> Nome do Coordenador</label>
+                        <input type="text" id="coordName" placeholder="Ex: Coordenador de Vendas" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="coordIdentifier"><i class="fas fa-fingerprint"></i> Identificador</label>
+                        <input type="text" id="coordIdentifier" placeholder="Ex: vendas" required pattern="[a-z_]+">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="coordSpecialty"><i class="fas fa-star"></i> Especialidade</label>
+                        <input type="text" id="coordSpecialty" placeholder="Ex: Vendas e Comercial" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="coordDescription"><i class="fas fa-align-left"></i> Descrição</label>
+                        <textarea id="coordDescription" rows="3" required></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="coordChildren"><i class="fas fa-users"></i> Agentes Filhos</label>
+                        <div class="children-selector" id="childrenSelector">
+                            <!-- Preenchido dinamicamente com checkboxes -->
+                        </div>
+                        <small>Selecione os subagentes que este coordenador gerenciará</small>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="resetCoordFormBtn">
+                        <i class="fas fa-undo"></i> Limpar
+                    </button>
+                    <button type="submit" class="btn-primary" id="createCoordBtn">
+                        <i class="fas fa-plus-circle"></i> Criar Coordenador
+                    </button>
+                </div>
+
+                <div class="creation-status" id="coordCreationStatus" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aba: Ingerir Dados (Admin Only) -->
+    <div class="container tab-content" id="ingest-data" style="display: none;">
+        <div class="ingest-section">
+            <div class="section-header">
+                <h2><i class="fas fa-database"></i> Ingerir Dados na Base de Conhecimento</h2>
+                <p>Faça upload de documentos (PDF, TXT, DOCX) para alimentar a base de conhecimento dos agentes</p>
+            </div>
+
+            <div class="ingest-form">
+                <div class="form-group">
+                    <label for="targetAgent"><i class="fas fa-bullseye"></i> Agente/Tabela Destino</label>
+                    <select id="targetAgent" required>
+                        <option value="">Selecione o agente...</option>
+                        <!-- Preenchido dinamicamente -->
+                    </select>
+                    <small>Os dados serão adicionados à base de conhecimento deste agente</small>
+                </div>
+
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" multiple accept=".pdf,.txt,.docx,.doc" style="display: none;">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h3>Arraste arquivos aqui ou clique para selecionar</h3>
+                    <p>Formatos suportados: PDF, TXT, DOCX (máx. 10MB por arquivo)</p>
+                    <button type="button" class="btn-secondary" id="selectFilesBtn">
+                        <i class="fas fa-folder-open"></i> Selecionar Arquivos
+                    </button>
+                </div>
+
+                <div class="files-list" id="filesList" style="display: none;">
+                    <h3><i class="fas fa-list"></i> Arquivos Selecionados</h3>
+                    <div class="files-container" id="filesContainer"></div>
+                    <div class="files-actions">
+                        <button type="button" class="btn-secondary" id="clearFilesBtn">
+                            <i class="fas fa-times"></i> Limpar Lista
+                        </button>
+                        <button type="button" class="btn-primary" id="startIngestBtn">
+                            <i class="fas fa-play"></i> Iniciar Ingestão
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ingest-progress" id="ingestProgress" style="display: none;">
+                    <h3><i class="fas fa-spinner fa-spin"></i> Processando Arquivos...</h3>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                        <span class="progress-text" id="progressText">0%</span>
+                    </div>
+                    <div class="ingest-logs" id="ingestLogs"></div>
+                </div>
+
+                <div class="ingest-result" id="ingestResult" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Overlay -->
+    <div class="processing-overlay" id="processingOverlay">
+        <div class="processing-content">
+            <div class="neoson-processing">
+                <div class="processing-avatar">🤖</div>
+                <h3>Neoson Processando</h3>
+                <p>Analisando sua solicitação e selecionando o melhor agente...</p>
+            </div>
+
+            <div class="processing-steps">
+                <div class="step" id="step-analyzing">
+                    <span><i class="fas fa-search"></i> Analisando solicitação</span>
+                    <div class="step-loader"></div>
+                </div>
+                
+                <div class="step" id="step-classifying">
+                    <span><i class="fas fa-tags"></i> Classificando tipo de pergunta</span>
+                    <div class="step-loader"></div>
+                </div>
+                
+                <div class="step" id="step-delegating">
+                    <span><i class="fas fa-hand-point-right"></i> Delegando para especialista</span>
+                    <div class="step-loader"></div>
+                </div>
+            </div>
+
+            <div class="agent-handoff">
+                <div class="handoff-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="target-agent">
+                    <div class="agent-avatar neoson">🤖</div>
+                    <h4>Agente</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script_neoson.js?v=2025100902"></script>
+</body>
+</html>
