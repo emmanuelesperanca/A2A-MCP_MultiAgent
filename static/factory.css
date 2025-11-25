@@ -35,6 +35,117 @@
     font-size: 1.1rem;
 }
 
+.factory-flow-guide {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.flow-step {
+    position: relative;
+    padding: var(--spacing-lg);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+    min-height: 160px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.flow-step::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: 14px;
+    border: 1px dashed rgba(255, 255, 255, 0.05);
+    pointer-events: none;
+}
+
+.flow-step.pending {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.flow-step.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 24px rgba(117, 36, 106, 0.25);
+}
+
+.flow-step.done {
+    border-color: #4caf50;
+}
+
+.flow-step-index {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+.flow-step-content h4 {
+    margin: 0 0 var(--spacing-xs) 0;
+    color: var(--text-primary);
+}
+
+.flow-step-description {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.flow-step-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.flow-step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.flow-action-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.flow-action-btn:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.flow-action-btn.primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: #fff;
+}
+
+.flow-action-btn.ghost {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
 /* Agent Type Selector */
 .agent-type-selector {
     display: flex;
@@ -86,7 +197,7 @@
 /* Agent Forms */
 .agent-form {
     border: 1px solid rgba(255, 255, 255, 1);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 20px;
     padding: var(--spacing-xl);
 }
@@ -299,7 +410,7 @@
 /* Agents List Section */
 .agents-list-section {
     border: 1px solid rgba(255, 255, 255, 1);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 20px;
     padding: var(--spacing-xl);
 }

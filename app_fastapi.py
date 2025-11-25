@@ -4,6 +4,12 @@ Backend completamente assíncrono para escalabilidade máxima
 Substitui o app.py Flask por uma solução moderna e performática
 """
 
+from dataclasses import dataclass
+import importlib
+import inspect
+import threading
+import time
+
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,25 +17,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, validator
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any, Tuple
 from datetime import datetime, timedelta
 import asyncio
 import logging
 import time
-import uuid
 import jwt
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError, DecodeError
 import secrets
 from contextlib import asynccontextmanager
 
 # Core configuration
-from core.config import config, print_config_summary
+from core.config import config
 
 # Importa o sistema Neoson assíncrono
 from agentes.neoson.neoson_async import criar_neoson_async
 
 # Importa o sistema de feedback
-from core.feedback_system import FeedbackSystem, get_feedback_system
+from core.feedback_system import get_feedback_system
 
 # Importa o sistema de enriquecimento de respostas
 from core.enrichment_system import ResponseEnricher, create_faqs_table, save_faq
@@ -52,6 +57,31 @@ logger = logging.getLogger(__name__)
 neoson_sistema = None
 feedback_system = None
 response_enricher = None
+
+
+@dataclass
+class AgentDescriptor:
+    """Metadados mínimos para execução direta de um agente."""
+
+    identifier: str
+    module_path: str
+    factory_name: str
+    display_name: str
+    specialty: str
+    agent_type: str = "subagent"
+    source: str = "registry"
+
+
+# Caches para instâncias e metadados dos agentes diretos
+agent_instance_cache: Dict[str, Any] = {}
+agent_descriptor_cache: Dict[str, AgentDescriptor] = {}
+agent_cache_lock: Optional[asyncio.Lock] = None
+
+# Cache do registro de agentes criado pela Agent Factory
+registry_cache_lock = threading.Lock()
+registry_cache_data: Dict[str, Dict[str, Any]] = {}
+registry_cache_timestamp: float = 0.0
+REGISTRY_CACHE_TTL = 60  # segundos
 
 # ============================================================================
 # CONFIGURAÇÕES DE AUTENTICAÇÃO
@@ -139,6 +169,7 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=3, max_length=100)
     user_type: str = Field("user", description="Tipo de usuário (admin ou user)")
 
+
 class LoginResponse(BaseModel):
     """Modelo para resposta de login"""
     success: bool
@@ -147,6 +178,7 @@ class LoginResponse(BaseModel):
     user_type: str
     message: str
 
+
 class TokenData(BaseModel):
     """Dados contidos no token JWT"""
     username: str
@@ -154,6 +186,8 @@ class TokenData(BaseModel):
     exp: int
 
 # Modelos de Chat
+
+
 class ChatRequest(BaseModel):
     """Modelo para requisição de chat"""
     mensagem: str = Field(..., min_length=1, max_length=1000)
@@ -216,6 +250,26 @@ class StatusResponse(BaseModel):
     neoson: Optional[Dict] = None
 
 
+class AgentCatalogEntry(BaseModel):
+    """Representa um agente disponível para invocação direta."""
+
+    identifier: str
+    name: str
+    specialty: Optional[str] = None
+    type: Optional[str] = None
+    endpoint: str
+    ask_endpoint: Optional[str] = None
+    path: Optional[str] = None
+    module_path: Optional[str] = None
+
+
+class AgentCatalogResponse(BaseModel):
+    """Payload retornado pelo catálogo de agentes."""
+
+    success: bool
+    agents: List[AgentCatalogEntry]
+
+
 # ============================================================================
 # MODELOS PARA FEEDBACK SYSTEM
 # ============================================================================
@@ -244,6 +298,23 @@ class FeedbackSubmitResponse(BaseModel):
     """Modelo para resposta de submissão de feedback"""
     status: str
     feedback_id: str
+    mensagem: str
+
+
+class TesterFeedbackRequest(BaseModel):
+    """Modelo para submissão de feedback do programa de testers"""
+    usuario_id: str = Field(..., min_length=1, max_length=150)
+    nota: int = Field(..., ge=0, le=10)
+    comentario: Optional[str] = Field(None, max_length=2000)
+    origem: Optional[str] = Field(None, max_length=100)
+    contexto: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class TesterFeedbackResponse(BaseModel):
+    """Modelo para resposta da submissão de testers"""
+    status: str
+    tester_feedback_id: str
     mensagem: str
 
 
@@ -446,8 +517,380 @@ async def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
 
 
 # ============================================================================
+# UTILITÁRIOS PARA ROTEAR AGENTES DIRETOS
+# ============================================================================
+
+def _normalize_agent_key(agent_key: str) -> str:
+    """Normaliza identificadores e caminhos de agentes para facilitar caching."""
+
+    return agent_key.strip().replace("\\", "/").strip("/").replace("-", "_").lower()
+
+
+def _strip_agent_identifier(identifier: str) -> str:
+    """Remove prefixos/sufixos padrão (agente_, _async)."""
+
+    value = identifier
+    if value.startswith("agente_"):
+        value = value[len("agente_"):]
+    if value.endswith("_async"):
+        value = value[: -len("_async")]
+    return value
+
+
+def _module_path_from_file_path(file_path: str) -> str:
+    """Converte caminho de arquivo em caminho de módulo Python."""
+
+    normalized = file_path.replace("\\", "/").replace(".py", "")
+    return normalized.replace("/", ".")
+
+
+def _title_from_identifier(identifier: str) -> str:
+    """Gera um nome amigável a partir do identificador."""
+
+    if not identifier:
+        return "Agente"
+    return " ".join(part.capitalize() for part in identifier.split("_"))
+
+
+def _cache_descriptor(descriptor: AgentDescriptor, *keys: str) -> None:
+    """Armazena descritores em cache para múltiplas chaves equivalentes."""
+
+    for key in keys:
+        if key:
+            agent_descriptor_cache[_normalize_agent_key(key)] = descriptor
+
+
+def _descriptor_from_registry(identifier: str, data: Dict[str, Any]) -> AgentDescriptor:
+    """Cria um descriptor completo a partir do registro persistido."""
+
+    file_path = data.get("file_path")
+    if not file_path:
+        raise ValueError(f"Registro do agente {identifier} sem file_path")
+
+    module_path = _module_path_from_file_path(file_path)
+    module_name = module_path.split(".")[-1]
+    factory_name = f"criar_{module_name}"
+
+    return AgentDescriptor(
+        identifier=identifier,
+        module_path=module_path,
+        factory_name=factory_name,
+        display_name=data.get("name", _title_from_identifier(identifier)),
+        specialty=data.get("specialty", _title_from_identifier(identifier)),
+        agent_type=data.get("type", "subagent"),
+        source="registry"
+    )
+
+
+def _get_registry_snapshot(force_refresh: bool = False) -> Dict[str, Dict[str, Any]]:
+    """Obtém snapshot em cache do registro de agentes."""
+
+    global registry_cache_data, registry_cache_timestamp
+
+    now = time.time()
+    needs_refresh = (
+        force_refresh
+        or not registry_cache_data
+        or (now - registry_cache_timestamp) > REGISTRY_CACHE_TTL
+    )
+
+    if needs_refresh:
+        with registry_cache_lock:
+            now = time.time()
+            if (
+                force_refresh
+                or not registry_cache_data
+                or (now - registry_cache_timestamp) > REGISTRY_CACHE_TTL
+            ):
+                registry = get_registry()
+                registry.reload()
+                registry_cache_data = dict(registry.agents)
+                registry_cache_timestamp = now
+
+    return registry_cache_data
+
+
+def _resolve_descriptor_from_registry(agent_key: str, *, force_refresh: bool = False) -> Optional[AgentDescriptor]:
+    """Tenta resolver um agente pelo registro persistido."""
+
+    snapshot = _get_registry_snapshot(force_refresh=force_refresh)
+    normalized = _normalize_agent_key(agent_key)
+
+    candidates = {normalized, _strip_agent_identifier(normalized)}
+    if "/" in normalized:
+        candidates.add(_strip_agent_identifier(normalized.split("/")[-1]))
+
+    for candidate in candidates:
+        if not candidate:
+            continue
+        data = snapshot.get(candidate)
+        if data:
+            descriptor = _descriptor_from_registry(candidate, data)
+            _cache_descriptor(
+                descriptor,
+                candidate,
+                descriptor.identifier,
+                descriptor.module_path,
+                data.get("file_path", "")
+            )
+            return descriptor
+
+    # Verificar por caminho de arquivo equivalente
+    for identifier, data in snapshot.items():
+        file_path = data.get("file_path", "")
+        if not file_path:
+            continue
+        normalized_path = _normalize_agent_key(file_path)
+        normalized_path_no_prefix = normalized_path.replace("agentes/", "", 1)
+        if normalized in {normalized_path, normalized_path_no_prefix}:
+            descriptor = _descriptor_from_registry(identifier, data)
+            _cache_descriptor(
+                descriptor,
+                identifier,
+                normalized_path,
+                normalized_path_no_prefix
+            )
+            return descriptor
+
+    return None
+
+
+def _resolve_descriptor_via_path(agent_key: str) -> Optional[AgentDescriptor]:
+    """Constroi descriptor a partir de um caminho literal informado na rota."""
+
+    normalized = _normalize_agent_key(agent_key).replace(".py", "")
+    if not normalized:
+        return None
+
+    if not normalized.startswith("agentes/"):
+        normalized = f"agentes/{normalized}"
+
+    module_path = normalized.replace("/", ".")
+    module_name = module_path.split(".")[-1]
+    identifier = _strip_agent_identifier(module_name)
+
+    descriptor = AgentDescriptor(
+        identifier=identifier or module_name,
+        module_path=module_path,
+        factory_name=f"criar_{module_name}",
+        display_name=_title_from_identifier(identifier or module_name),
+        specialty=_title_from_identifier(identifier or module_name),
+        agent_type="custom",
+        source="path"
+    )
+
+    _cache_descriptor(descriptor, normalized, module_path, identifier)
+    return descriptor
+
+
+def _resolve_agent_descriptor(agent_key: str) -> AgentDescriptor:
+    """Resolve metadados mínimos de um agente por id ou caminho."""
+
+    normalized = _normalize_agent_key(agent_key)
+    if not normalized:
+        raise HTTPException(status_code=400, detail="Identificador de agente inválido")
+
+    cached = agent_descriptor_cache.get(normalized)
+    if cached:
+        return cached
+
+    descriptor = _resolve_descriptor_from_registry(normalized)
+    if not descriptor:
+        descriptor = _resolve_descriptor_from_registry(normalized, force_refresh=True)
+    if not descriptor:
+        descriptor = _resolve_descriptor_via_path(normalized)
+
+    if not descriptor:
+        raise HTTPException(status_code=404, detail=f"Agente '{agent_key}' não encontrado")
+
+    _cache_descriptor(descriptor, normalized, descriptor.identifier, descriptor.module_path)
+    return descriptor
+
+
+async def _get_or_create_agent_instance(descriptor: AgentDescriptor) -> Any:
+    """Obtém instância única para o agente alvo."""
+
+    global agent_cache_lock
+
+    cache_key = descriptor.module_path
+    instance = agent_instance_cache.get(cache_key)
+    if instance:
+        return instance
+
+    if agent_cache_lock is None:
+        agent_cache_lock = asyncio.Lock()
+
+    async with agent_cache_lock:
+        instance = agent_instance_cache.get(cache_key)
+        if instance:
+            return instance
+
+        instance = await _instantiate_agent(descriptor)
+        agent_instance_cache[cache_key] = instance
+        return instance
+
+
+async def _instantiate_agent(descriptor: AgentDescriptor) -> Any:
+    """Carrega módulo e cria instância do agente."""
+
+    try:
+        module = importlib.import_module(descriptor.module_path)
+    except ModuleNotFoundError as exc:
+        logger.error("❌ Módulo do agente não encontrado: %s", descriptor.module_path)
+        raise HTTPException(status_code=404, detail=f"Módulo do agente indisponível: {descriptor.module_path}") from exc
+
+    factory = getattr(module, descriptor.factory_name, None)
+    instance = None
+
+    try:
+        if factory:
+            instance = factory(debug=False)
+            if inspect.isawaitable(instance):
+                instance = await instance
+        else:
+            class_name = "".join(part.capitalize() for part in descriptor.module_path.split(".")[-1].split("_"))
+            cls = getattr(module, class_name, None)
+            if cls:
+                try:
+                    instance = cls(debug=False)
+                except TypeError:
+                    instance = cls()
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("❌ Erro ao instanciar agente %s", descriptor.identifier)
+        raise HTTPException(status_code=500, detail=f"Falha ao instanciar agente {descriptor.identifier}") from exc
+
+    if instance is None:
+        raise HTTPException(status_code=500, detail=f"Agente {descriptor.identifier} não possui factory compatível")
+
+    logger.info("🤖 Instância inicializada para agente direto: %s (%s)", descriptor.identifier, descriptor.module_path)
+    return instance
+
+
+async def _call_with_variations(method, mensagem: str, perfil: dict) -> Any:
+    """Invoca método tratando variações de assinatura comuns."""
+
+    attempts = [
+        lambda: method(mensagem, perfil),
+        lambda: method(mensagem, perfil_usuario=perfil),
+        lambda: method(pergunta=mensagem, user_profile=perfil),
+        lambda: method(mensagem=mensagem, perfil=perfil),
+        lambda: method(mensagem=mensagem, user_profile=perfil),
+        lambda: method(message=mensagem, profile=perfil),
+        lambda: method(pergunta=mensagem),
+        lambda: method(mensagem=mensagem),
+    ]
+
+    last_type_error: Optional[TypeError] = None
+    for attempt in attempts:
+        try:
+            result = attempt()
+        except TypeError as exc:
+            last_type_error = exc
+            continue
+
+        if inspect.isawaitable(result):
+            result = await result
+        return result
+
+    if last_type_error:
+        raise last_type_error
+    raise HTTPException(status_code=500, detail="Método do agente não pôde ser invocado")
+
+
+async def _dispatch_to_agent(agent_instance: Any, mensagem: str, perfil: dict) -> str:
+    """Tenta executar mensagem diretamente no agente disponível."""
+
+    candidate_methods = [
+        getattr(agent_instance, "handle_message", None),
+        getattr(agent_instance, "processar_async", None),
+        getattr(agent_instance, "processar_pergunta_async", None),
+        getattr(agent_instance, "processar_pergunta", None),
+    ]
+
+    for method in candidate_methods:
+        if method is None:
+            continue
+        try:
+            resposta = await _call_with_variations(method, mensagem, perfil)
+            if resposta is not None:
+                return str(resposta)
+        except TypeError:
+            continue
+
+    raise HTTPException(status_code=500, detail="Nenhum manipulador compatível encontrado para este agente")
+
+
+def _build_default_profile(current_user: dict) -> dict:
+    """Gera perfil mínimo usando dados do usuário autenticado."""
+
+    return {
+        "Nome": current_user.get("full_name", current_user.get("username", "Usuário")),
+        "Cargo": "Gerente" if current_user.get("user_type") == "admin" else "Colaborador",
+        "Departamento": "Geral",
+        "Nivel_Acesso": current_user.get("user_type", "user"),
+    }
+
+
+def _build_agents_catalog() -> List[Dict[str, Any]]:
+    """Monta catálogo utilizado pelo frontend para seleção de destino."""
+
+    snapshot = _get_registry_snapshot()
+    catalog = []
+
+    for identifier, data in snapshot.items():
+        entry = {
+            "identifier": identifier,
+            "name": data.get("name", _title_from_identifier(identifier)),
+            "specialty": data.get("specialty"),
+            "type": data.get("type"),
+            "endpoint": f"/api/agents/{identifier}",
+            "path": data.get("file_path"),
+            "ask_endpoint": f"/ask_agentes/{data.get('file_path')}" if data.get("file_path") else None,
+            "module_path": _module_path_from_file_path(data.get("file_path")) if data.get("file_path") else None,
+        }
+        catalog.append(entry)
+
+    # Ordenar por nome para UX consistente
+    catalog.sort(key=lambda item: item["name"] or item["identifier"])
+    return catalog
+
+
+def _split_resposta(resposta_texto: str) -> Tuple[str, Optional[str]]:
+    """Separa resposta principal da cadeia de raciocínio quando aplicável."""
+
+    cadeia_separador = "=" * 60
+    if cadeia_separador in resposta_texto:
+        partes = resposta_texto.split(cadeia_separador, 1)
+        resposta_principal = partes[0].strip()
+        cadeia_raciocinio = cadeia_separador + partes[1]
+        return resposta_principal, cadeia_raciocinio
+    return resposta_texto, None
+
+
+async def _process_direct_agent_request(agent_reference: str, request: ChatRequest, current_user: dict) -> ChatResponse:
+    """Fluxo compartilhado para rotas diretas de agentes."""
+
+    descriptor = _resolve_agent_descriptor(agent_reference)
+    agent_instance = await _get_or_create_agent_instance(descriptor)
+    perfil = _build_default_profile(current_user)
+
+    logger.info("🎯 Rota direta acionada: %s (%s)", descriptor.identifier, descriptor.module_path)
+    resposta_texto = await _dispatch_to_agent(agent_instance, request.mensagem, perfil)
+    resposta_principal, cadeia = _split_resposta(resposta_texto)
+
+    return ChatResponse(
+        resposta=resposta_principal,
+        cadeia_raciocinio=cadeia,
+        agent_usado=descriptor.display_name,
+        especialidade=descriptor.specialty,
+        classificacao=descriptor.identifier,
+        sucesso=True
+    )
+
+# ============================================================================
 # AUTENTICAÇÃO - ENDPOINTS
 # ============================================================================
+
 
 @app.post("/api/auth/login", response_model=LoginResponse)
 async def login(request: LoginRequest):
@@ -518,6 +961,57 @@ async def get_user_info(current_user: dict = Depends(get_current_user)):
         "role": current_user["user_type"],
         "user_type": current_user["user_type"]
     }
+
+
+@app.get("/api/agents", response_model=AgentCatalogResponse)
+async def list_direct_agents(current_user: dict = Depends(get_current_user)):
+    """Lista agentes disponíveis para invocação direta via API."""
+
+    try:
+        catalog = [
+            AgentCatalogEntry(
+                identifier="neoson",
+                name="Neoson (Orquestrador)",
+                specialty="Roteamento Inteligente",
+                type="orchestrator",
+                endpoint="/api/chat",
+                ask_endpoint=None,
+                path=None,
+                module_path=None,
+            )
+        ]
+
+        for agent in _build_agents_catalog():
+            catalog.append(AgentCatalogEntry(**agent))
+
+        return AgentCatalogResponse(success=True, agents=catalog)
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("❌ Erro ao listar agentes diretos")
+        raise HTTPException(status_code=500, detail=f"Erro ao listar agentes: {exc}") from exc
+
+
+@app.post("/api/agents/{agent_name}", response_model=ChatResponse)
+async def chat_with_specific_agent(
+    agent_name: str,
+    request: ChatRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Envia mensagem diretamente a um agente identificado no registro."""
+
+    return await _process_direct_agent_request(agent_name, request, current_user)
+
+
+@app.post("/ask_agentes/{agent_path:path}", response_model=ChatResponse)
+async def chat_with_agent_by_path(
+    agent_path: str,
+    request: ChatRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Versão compatível com caminhos completos do arquivo do agente."""
+
+    return await _process_direct_agent_request(agent_path, request, current_user)
 
 
 @app.post("/api/chat")
@@ -723,10 +1217,12 @@ async def chat(request: ChatRequest):
                 except Exception as e:
                     logger.warning(f"⚠️ Erro ao salvar FAQ: {e}")
                 
-                logger.info(f"✅ Resposta enriquecida com {len(enriched_data.get('documentos_relacionados', []))} docs, "
-                           f"{len(enriched_data.get('faqs_similares', []))} FAQs, "
-                           f"{len(enriched_data.get('proximas_sugestoes', []))} sugestões, "
-                           f"{len(enriched_data.get('glossario', {}))} termos no glossário")
+                logger.info(
+                    f"✅ Resposta enriquecida com {len(enriched_data.get('documentos_relacionados', []))} docs, "
+                    f"{len(enriched_data.get('faqs_similares', []))} FAQs, "
+                    f"{len(enriched_data.get('proximas_sugestoes', []))} sugestões, "
+                    f"{len(enriched_data.get('glossario', {}))} termos no glossário"
+                )
             
             except Exception as e:
                 logger.warning(f"⚠️ Erro ao enriquecer resposta: {e}")
@@ -983,6 +1479,37 @@ async def submit_feedback(request: FeedbackSubmitRequest):
     except Exception as e:
         logger.error(f"❌ Erro ao salvar feedback: {e}")
         raise HTTPException(status_code=500, detail=f"Erro ao salvar feedback: {str(e)}")
+
+
+@app.post("/api/feedback/testers", response_model=TesterFeedbackResponse)
+async def submit_tester_feedback(request: TesterFeedbackRequest):
+    """Mantém feedbacks dos testers armazenados diretamente em PostgreSQL."""
+    if not feedback_system:
+        raise HTTPException(
+            status_code=503,
+            detail="Sistema de feedback não está disponível. Verifique a conexão com o banco de dados."
+        )
+
+    try:
+        logger.info(
+            "🧪 Feedback de tester recebido: nota %s por %s", request.nota, request.usuario_id
+        )
+        tester_feedback_id = await feedback_system.save_tester_feedback(
+            usuario_id=request.usuario_id,
+            comentario=request.comentario,
+            nota=request.nota,
+            origem=request.origem,
+            contexto=request.contexto,
+            metadata=request.metadata
+        )
+        return TesterFeedbackResponse(
+            status="success",
+            tester_feedback_id=tester_feedback_id,
+            mensagem="Obrigado por compartilhar seu feedback como tester interno!"
+        )
+    except Exception as exc:
+        logger.error("❌ Erro ao salvar feedback de tester: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar feedback de tester: {exc}")
 
 
 @app.get("/api/stats/agent/{agent_name}", response_model=AgentStatsResponse)

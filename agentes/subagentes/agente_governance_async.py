@@ -205,14 +205,49 @@ class AgenteGovernanceAsync:
         
         contexto_parts = []
         for i, doc in enumerate(documents, 1):
-            conteudo = doc.get('conteudo', doc.get('content', ''))
-            metadata_str = doc.get('metadata', {})
-            
+            conteudo = (
+                doc.get('conteudo')
+                or doc.get('conteudo_original')
+                or doc.get('content')
+                or doc.get('texto')
+                or ''
+            )
+
+            if isinstance(conteudo, str):
+                conteudo = conteudo.strip()
+            else:
+                conteudo = ''
+
+            if not conteudo:
+                continue
+
+            metadata_parts = []
+            fonte = doc.get('fonte_documento') or doc.get('fonte')
+            idioma = doc.get('idioma')
+            validade = doc.get('data_validade')
+            responsavel = doc.get('responsavel')
+
+            if fonte:
+                metadata_parts.append(f"Fonte: {fonte}")
+            if idioma:
+                metadata_parts.append(f"Idioma: {idioma}")
+            if validade:
+                metadata_parts.append(f"Validade: {validade}")
+            if responsavel:
+                metadata_parts.append(f"Responsável: {responsavel}")
+
+            metadata_dict = doc.get('metadata')
+            if isinstance(metadata_dict, dict) and metadata_dict:
+                metadata_parts.append(f"Metadados extras: {metadata_dict}")
+
             contexto_parts.append(f"[Documento {i}]")
-            if metadata_str:
-                contexto_parts.append(f"Metadados: {metadata_str}")
+            if metadata_parts:
+                contexto_parts.append(" | ".join(metadata_parts))
             contexto_parts.append(conteudo)
-            contexto_parts.append("")  # Linha em branco
+            contexto_parts.append("")
+
+        if not contexto_parts:
+            return "Nenhum documento relevante encontrado na base de conhecimento."
         
         return "\n".join(contexto_parts)
     

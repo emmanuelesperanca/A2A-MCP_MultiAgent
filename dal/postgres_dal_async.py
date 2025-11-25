@@ -160,7 +160,8 @@ class PostgresDALAsync:
             
             # Query base para busca por similaridade coseno
             query = f"""
-                SELECT *, 
+                SELECT *,
+                       conteudo_original AS conteudo,
                        1 - (vetor <=> $1::vector) as similarity_score
                 FROM {quoted_table}
             """

@@ -17,6 +17,11 @@ console.log('🏭 Factory.js carregado - versão 1.1.3');
 let currentAgentType = 'subagent';
 let availableCoordinators = [];
 let availableSubagents = [];
+const FLOW_STATUS_LABELS = {
+    pending: 'Pendente',
+    active: 'Em andamento',
+    done: 'Concluído'
+};
 
 // ============================================================================
 // SELEÇÃO DE TIPO DE AGENTE
@@ -146,6 +151,49 @@ function toggleMCPFields() {
 }
 
 // ============================================================================
+// GUIA DE FLUXO
+// ============================================================================
+
+function setFlowStepStatus(step, status = 'pending', description = '', actions = []) {
+    const stepEl = document.querySelector(`.flow-step[data-step="${step}"]`);
+    if (!stepEl) return;
+
+    stepEl.classList.remove('pending', 'active', 'done');
+    stepEl.classList.add(status);
+
+    const badge = stepEl.querySelector('.flow-step-badge');
+    if (badge) {
+        badge.textContent = FLOW_STATUS_LABELS[status] || FLOW_STATUS_LABELS.pending;
+    }
+
+    const descriptionEl = stepEl.querySelector('.flow-step-description');
+    if (descriptionEl && description) {
+        descriptionEl.textContent = description;
+    }
+
+    const actionsContainer = stepEl.querySelector('.flow-step-actions');
+    if (actionsContainer) {
+        actionsContainer.innerHTML = '';
+        actions.forEach(actionItem => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `flow-action-btn ${actionItem.variant || 'primary'}`;
+            btn.textContent = actionItem.label;
+            if (typeof actionItem.action === 'function') {
+                btn.addEventListener('click', actionItem.action);
+            }
+            actionsContainer.appendChild(btn);
+        });
+    }
+}
+
+function resetFlowGuide() {
+    setFlowStepStatus('create', 'active', 'Preencha o formulário ao lado e clique em "Criar Subagente".');
+    setFlowStepStatus('ingest', 'pending', 'Após criar, adicione documentos à base dedicada do agente.');
+    setFlowStepStatus('test', 'pending', 'Depois da ingestão, teste o agente diretamente no chat.');
+}
+
+// ============================================================================
 // CRIAR SUBAGENTE
 // ============================================================================
 
@@ -197,6 +245,7 @@ async function createAgent() {
     
     // Mostrar status
     showFactoryStatus('Criando subagente...');
+    setFlowStepStatus('create', 'active', 'Estamos configurando o novo subagente e provisionando os recursos necessários.');
     
     try {
         const token = localStorage.getItem('token');
@@ -243,7 +292,7 @@ async function createAgent() {
             }
             
             // Mostrar opção de adicionar conhecimento
-            showAddKnowledgePrompt(result.identifier, result.table_name);
+            showAddKnowledgePrompt(result.identifier, result.table_name, name);
             
         } else {
             console.error('❌ Erro ao criar subagente:', result);
@@ -383,6 +432,8 @@ function resetFactoryForm() {
             cb.closest('.agent-checkbox').classList.remove('selected');
         });
     }
+
+    resetFlowGuide();
 }
 
 // ============================================================================
@@ -481,9 +532,31 @@ function viewAgentInTree(agentId) {
     showNotification(`📊 Visualizando agente "${agentId}" na árvore`, 'info');
 }
 
+function openChatWithAgent(agentId) {
+    showTab('chat');
+
+    setTimeout(() => {
+        if (typeof window.selectAgentForChat === 'function') {
+            const found = window.selectAgentForChat(agentId);
+            if (found) {
+                setFlowStepStatus('test', 'active', 'Envie uma pergunta para validar o comportamento desse agente.');
+                showNotification(`💬 Conversando diretamente com ${agentId}`, 'success');
+            } else {
+                showNotification('⚠️ Não encontrei esse agente no seletor do chat. Atualize os destinos e tente novamente.', 'error');
+            }
+        }
+    }, 300);
+}
+
 function addKnowledgeToAgent(agentId, tableName) {
     // Ir para a página de Base de Conhecimento
     showTab('knowledge');
+
+    if (agentId) {
+        setFlowStepStatus('create', 'done', `Subagente ${agentId} configurado com sucesso.`);
+    }
+    setFlowStepStatus('ingest', 'active', 'Selecione os arquivos e clique em "Iniciar Ingestão" para alimentar a base do agente.');
+    setFlowStepStatus('test', 'pending', 'Assim que a ingestão finalizar, volte ao chat para validar o comportamento.');
     
     // Pré-selecionar a tabela no dropdown
     setTimeout(() => {
@@ -502,12 +575,29 @@ function addKnowledgeToAgent(agentId, tableName) {
     showNotification(`📚 Adicione conhecimento ao agente "${agentId}"`, 'info');
 }
 
-function showAddKnowledgePrompt(agentId, tableName) {
-    const message = `Agente criado! Deseja adicionar conhecimento agora?`;
-    
-    if (confirm(message)) {
-        addKnowledgeToAgent(agentId, tableName);
-    }
+function showAddKnowledgePrompt(agentId, tableName, agentName) {
+    const displayName = agentName || agentId;
+    const tableMessage = tableName
+        ? `A base ${tableName} está pronta para receber documentos.`
+        : 'A base padrão foi criada e está pronta para ingestão.';
+
+    setFlowStepStatus('create', 'done', `Subagente ${displayName} criado com sucesso.`);
+    setFlowStepStatus('ingest', 'active', tableMessage, [
+        {
+            label: 'Adicionar conhecimento agora',
+            action: () => addKnowledgeToAgent(agentId, tableName),
+            variant: 'primary'
+        }
+    ]);
+    setFlowStepStatus('test', 'pending', 'Depois da ingestão, volte ao chat e valide o comportamento do agente.', [
+        {
+            label: 'Abrir chat com o agente',
+            action: () => openChatWithAgent(agentId),
+            variant: 'ghost'
+        }
+    ]);
+
+    showNotification(`🚀 ${displayName} criado! Avance para a ingestão de conhecimento.`, 'success');
 }
 
 // ============================================================================
@@ -602,6 +692,8 @@ window.viewAgentInTree = viewAgentInTree;
 window.addKnowledgeToAgent = addKnowledgeToAgent;
 window.toggleMCPFields = toggleMCPFields;
 window.resetFactoryForm = resetFactoryForm;
+window.openChatWithAgent = openChatWithAgent;
+window.resetFlowGuide = resetFlowGuide;
 
 console.log('✅ Funções do Factory expostas no window');
 
@@ -613,6 +705,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Carregar lista de agentes criados
     refreshAgentsList();
+
+    // Resetar guia de fluxo
+    resetFlowGuide();
 });
 
 console.log('✅ Agent Factory pronto!');

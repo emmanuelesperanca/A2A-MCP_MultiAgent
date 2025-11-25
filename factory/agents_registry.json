@@ -146,27 +146,106 @@
       "dev",
       "enduser",
       "governance",
-      "final_test"
+      "final_test",
+      "sala_limpa_equipamentos",
+      "rpa",
+      "robo",
+      "equipamentos",
+      "equipamentos_fabrica",
+      "equipamentos_supernova"
     ],
     "created_at": "2025-10-16T15:47:49.307895",
-    "updated_at": "2025-10-21T18:45:39.034017"
+    "updated_at": "2025-11-19T13:57:47.766879"
   },
-  "final_test": {
-    "identifier": "final_test",
-    "name": "Final Test",
-    "specialty": "Teste de Integração Completa",
+  "rpa": {
+    "identifier": "rpa",
+    "name": "Kevin",
+    "specialty": "Especialista em RPA e Automações",
     "type": "subagent",
-    "table_name": "knowledge_final_test",
-    "file_path": "agentes/subagentes/agente_final_test_async.py",
-    "html_path": "c:\\Users\\u137147\\OneDrive - Straumann Group\\Documents\\Automacoes\\Neoson Reborn\\agente_ia_poc\\templates\\agents\\final_test.html",
+    "table_name": "knowledge_rpa",
+    "file_path": "agentes/subagentes/agente_rpa_async.py",
+    "html_path": "C:\\Users\\u137147\\OneDrive - Straumann Group\\Documents\\Automacoes\\Neoson Reborn\\agente_ia_poc\\templates\\agents\\rpa.html",
     "keywords": [
-      "teste",
-      "final",
-      "validacao"
+      "rpa",
+      "automação",
+      "automation",
+      "automacao"
     ],
     "tools_enabled": false,
     "tools_category": null,
-    "created_at": "2025-10-21T18:45:39.027587",
-    "updated_at": "2025-10-21T18:45:39.027613"
+    "created_at": "2025-11-17T15:58:15.012662",
+    "updated_at": "2025-11-17T15:58:15.012691"
+  },
+  "equipamentos": {
+    "identifier": "equipamentos",
+    "name": "Alexandre",
+    "specialty": "Suporte e manutenção de equipamentos e máquinas da fábrica",
+    "type": "subagent",
+    "table_name": "knowledge_equipamentos",
+    "file_path": "agentes/subagentes/agente_equipamentos_async.py",
+    "html_path": "C:\\Users\\u137147\\OneDrive - Straumann Group\\Documents\\Automacoes\\Neoson Reborn\\agente_ia_poc\\templates\\agents\\equipamentos.html",
+    "keywords": [
+      "equipamentos",
+      "manutenção",
+      "máquinas",
+      "fábrica"
+    ],
+    "tools_enabled": false,
+    "tools_category": null,
+    "created_at": "2025-11-18T13:07:31.189823",
+    "updated_at": "2025-11-18T13:07:31.190131"
+  },
+  "equipamentos_fabrica": {
+    "identifier": "equipamentos_fabrica",
+    "name": "Aline",
+    "specialty": "Suporte e Manutenção para os Equipamentos da Fábrica",
+    "type": "subagent",
+    "table_name": "knowledge_equipamentos_fabrica",
+    "file_path": "agentes/subagentes/agente_equipamentos_fabrica_async.py",
+    "html_path": "C:\\Users\\u137147\\OneDrive - Straumann Group\\Documents\\Automacoes\\Neoson Reborn\\agente_ia_poc\\templates\\agents\\equipamentos_fabrica.html",
+    "keywords": [
+      "equipamentos",
+      "fábrica",
+      "manutenção"
+    ],
+    "tools_enabled": false,
+    "tools_category": null,
+    "created_at": "2025-11-18T13:53:21.226940",
+    "updated_at": "2025-11-18T13:53:21.226965"
+  },
+  "equipamentos_neodent": {
+    "identifier": "equipamentos_neodent",
+    "name": "Nathalia",
+    "specialty": "Manutenção e Suporte de equipamentos e máquinas.",
+    "type": "subagent",
+    "table_name": "knowledge_equipamentos_neodent",
+    "file_path": "agentes/subagentes/agente_equipamentos_neodent_async.py",
+    "html_path": "C:\\Users\\u137147\\OneDrive - Straumann Group\\Documents\\Automacoes\\Neoson Reborn\\agente_ia_poc\\templates\\agents\\equipamentos_neodent.html",
+    "keywords": [
+      "equipamentos",
+      "manutenção",
+      "maquinas"
+    ],
+    "tools_enabled": false,
+    "tools_category": null,
+    "created_at": "2025-11-18T16:15:29.470103",
+    "updated_at": "2025-11-18T16:15:29.470572"
+  },
+  "equipamentos_supernova": {
+    "identifier": "equipamentos_supernova",
+    "name": "Vane",
+    "specialty": "Teste",
+    "type": "subagent",
+    "table_name": "knowledge_equipamentos_supernova",
+    "file_path": "agentes/subagentes/agente_equipamentos_supernova_async.py",
+    "html_path": "C:\\Users\\u137147\\OneDrive - Straumann Group\\Documents\\Automacoes\\Neoson Reborn\\agente_ia_poc\\templates\\agents\\equipamentos_supernova.html",
+    "keywords": [
+      "equipamentos",
+      "teste"
+    ],
+    "tools_enabled": false,
+    "tools_category": null,
+    "created_at": "2025-11-19T13:57:47.736881",
+    "updated_at": "2025-11-19T13:57:47.737118"
   }
 }

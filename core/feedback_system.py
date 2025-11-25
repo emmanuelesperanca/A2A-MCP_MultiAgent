@@ -174,6 +174,7 @@ class FeedbackSystem:
         # Stats internas
         self.stats = {
             'feedbacks_saved': 0,
+            'tester_feedbacks_saved': 0,
             'redis_hits': 0,
             'redis_misses': 0,
             'db_queries': 0
@@ -290,6 +291,55 @@ class FeedbackSystem:
         except Exception as e:
             conn.rollback()
             logger.error(f"❌ Erro ao salvar feedback: {e}")
+            raise
+        finally:
+            conn.close()
+
+    async def save_tester_feedback(
+        self,
+        usuario_id: str,
+        comentario: Optional[str],
+        nota: int,
+        origem: Optional[str] = None,
+        contexto: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Armazena feedbacks do programa de testers em tabela dedicada."""
+        tester_feedback_id = str(uuid.uuid4())
+        conn = self._get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO feedback_testers (
+                        tester_feedback_id,
+                        timestamp,
+                        usuario_id,
+                        comentario,
+                        nota,
+                        origem,
+                        contexto,
+                        metadata
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb
+                    )
+                """, (
+                    tester_feedback_id,
+                    datetime.now(timezone.utc).isoformat(),
+                    usuario_id,
+                    comentario,
+                    nota,
+                    origem,
+                    json.dumps(contexto) if contexto else None,
+                    json.dumps(metadata) if metadata else None
+                ))
+                conn.commit()
+                self.stats['tester_feedbacks_saved'] += 1
+                self.stats['db_queries'] += 1
+                logger.info(f"🧪 Feedback de tester salvo: {tester_feedback_id[:8]}")
+                return tester_feedback_id
+        except Exception as exc:
+            conn.rollback()
+            logger.error(f"❌ Erro ao salvar feedback de tester: {exc}")
             raise
         finally:
             conn.close()
@@ -508,6 +558,10 @@ class FeedbackSystem:
         metrics.append("# HELP neoson_feedback_system_feedbacks_saved_total Total de feedbacks salvos")
         metrics.append("# TYPE neoson_feedback_system_feedbacks_saved_total counter")
         metrics.append(f"neoson_feedback_system_feedbacks_saved_total {self.stats['feedbacks_saved']}")
+
+        metrics.append("# HELP neoson_feedback_system_tester_feedbacks_saved_total Total de feedbacks de testers salvos")
+        metrics.append("# TYPE neoson_feedback_system_tester_feedbacks_saved_total counter")
+        metrics.append(f"neoson_feedback_system_tester_feedbacks_saved_total {self.stats['tester_feedbacks_saved']}")
         
         metrics.append("# HELP neoson_feedback_system_redis_hits_total Cache hits do Redis")
         metrics.append("# TYPE neoson_feedback_system_redis_hits_total counter")

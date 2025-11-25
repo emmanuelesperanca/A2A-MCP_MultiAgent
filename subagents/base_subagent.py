@@ -514,36 +514,39 @@ class BaseSubagent:
         if not api_key:
             raise ValueError("Chave da API OPENAI_API_KEY não encontrada nas configurações")
 
-        # Determine database domain based on agent type
+        # Determine database domain based on table name hint (fallback para "main")
         domain_mapping = {
             "knowledge_hr": "rh",
             "knowledge_rh": "rh",
-            "knowledge_TECH": "ti",
             "knowledge_tech": "ti",
-            "knowledge_IT GOVERNANCE & DELIVERY METHODS": "governance",
-            "knowledge_IT INFRASTRUCTURE & CLOUD": "infra",
-            "knowledge_SOFTWARE DEVELOPMENT": "dev",
-            "knowledge_ARCHITETURE & DEV": "dev",
-            "knowledge_IT END-USER SERVICES": "enduser",
-            "knowledge_END-USER": "enduser"
+            "knowledge_it governance": "governance",
+            "knowledge_it infrastructure": "infra",
+            "knowledge_architeture & dev": "dev",
+            "knowledge_software development": "dev",
+            "knowledge_it end-user services": "enduser",
+            "knowledge_end-user": "enduser"
         }
-        
-        # Find domain based on table name
+
+        table_hint = (self.config.table_name or "").lower()
         domain = "main"
-        for table_pattern, domain_name in domain_mapping.items():
-            if table_pattern in self.config.table_name:
+        for pattern, domain_name in domain_mapping.items():
+            if pattern in table_hint:
                 domain = domain_name
                 break
-        
-        # Get database configuration for this domain
+
+        # Get database configuration for this domain (URL) but preserve tabela personalizada
         db_config = app_config.get_database_config(domain)
         self.db_dsn = db_config["url"]
-        self.table_name = db_config["table"]
+
+        preferred_table = (self.config.table_name or "").strip()
+        self.table_name = preferred_table or db_config["table"]
         
         if not self.db_dsn:
             raise ValueError(f"Database URL não configurada para o domínio {domain}")
         
-        self._log(f"✅ Fonte de conhecimento configurada: tabela '{self.table_name}' (domínio: {domain})")
+        self._log(
+            f"✅ Fonte de conhecimento configurada: tabela '{self.table_name}' (domínio: {domain})"
+        )
         return api_key
 
     def inicializar_modelos(self, api_key: str) -> None:

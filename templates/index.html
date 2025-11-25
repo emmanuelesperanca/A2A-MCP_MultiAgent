@@ -11,153 +11,368 @@
     
     <link rel="stylesheet" href="/static/factory.css?v=1.1.3">
     <style>
-        /* Faixa Alpha - Em Desenvolvimento */
-        .alpha-banner {
-            position: fixed;
-            top: 24px;
-            right: -80px;
-            z-index: 9999;
-            width: 340px;
-            height: 48px;
-            background: repeating-linear-gradient(135deg, #9e8712 0 20px, #222 20px 40px);
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 1.1rem;
-            text-align: center;
-            line-height: 48px;
-            transform: rotate(20deg);
-            box-shadow: 0 2px 12px rgba(0,0,0,0.18);
-            border-radius: 8px;
-            letter-spacing: 1px;
-            border: 2px solid #222;
-            pointer-events: none;
-        }
-        /* ============================================================================
-           🎨 NEOSON DESIGN SYSTEM - VARIÁVEIS CSS
-           Modifique aqui para personalizar toda a aplicação
-        ============================================================================ */
         :root {
-            /* === PALETA DE CORES === */
+            --bg-primary: #05050d;
+            --bg-secondary: rgba(255, 255, 255, 0.03);
+            --gradient-bg: linear-gradient(180deg, rgba(8, 8, 18, 0.95), rgba(5, 5, 13, 0.98));
+            --gradient-primary: linear-gradient(135deg, #75246a, #47ad8a);
+            --text-primary: #f4f4f5;
+            --text-secondary: rgba(244, 244, 245, 0.78);
+            --text-tertiary: rgba(244, 244, 245, 0.55);
+            --text-muted: rgba(255, 255, 255, 0.65);
+            --text-on-white: #1a1a1a;
             --color-primary: #75246a;
-            --color-secondary: #47ad8a;
-            --color-accent: #833178;
-            
-            /* === GRADIENTE DE FUNDO === */
-            --gradient-bg: linear-gradient(90deg, #75246a 0%, #47ad8a 100%);
-            
-            /* === SIDEBAR === */
-            --sidebar-width: 260px;
-            --sidebar-collapsed-width: 60px;
-            --sidebar-bg: rgba(0, 0, 0, 0.25);
-            --sidebar-border: rgba(255, 255, 255, 0.15);
-            --sidebar-item-hover: rgba(255, 255, 255, 0.1);
-            --sidebar-item-active: rgba(255, 255, 255, 0.2);
-            
-            /* === CHAT === */
-            --chat-max-width: 800px;
-            --message-user-bg: rgba(255, 255, 255, 0.15);
+            --color-secondary: #c9b7ff;
+            --color-accent: #47ad8a;
+            --accent-color: #47ad8a;
+            --btn-primary-bg: linear-gradient(135deg, #75246a, #47ad8a);
+            --btn-primary-text: #ffffff;
+            --btn-hover-shadow: 0 12px 26px rgba(71, 173, 138, 0.35);
+            --sidebar-width: 320px;
+            --sidebar-border: rgba(255, 255, 255, 0.12);
+            --sidebar-item-hover: rgba(255, 255, 255, 0.08);
+            --sidebar-item-active: rgba(255, 255, 255, 0.12);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --chat-max-width: 760px;
+            --input-bg: rgba(255, 255, 255, 0.04);
+            --input-radius: 18px;
+            --input-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
             --message-assistant-bg: rgba(0, 0, 0, 0.15);
-            --message-border-radius: 16px;
-            
-            /* === INPUT === */
-            --input-bg: rgba(255, 255, 255, 0.95);
-            --input-border: rgba(255, 255, 255, 0.3);
-            --input-radius: 24px;
-            --input-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-            
-            /* === BOTÕES === */
-            --btn-primary-bg: #ffffff;
-            --btn-primary-text: #75246a;
-            --btn-hover-shadow: 0 4px 12px rgba(117, 36, 106, 0.3);
-            
-            /* === TEXTO === */
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.85);
-            --text-muted: rgba(255, 255, 255, 0.6);
-            --text-on-white: #333333;
-            
-            /* === TRANSIÇÕES === */
-            --transition-fast: 0.2s ease;
+            --message-user-bg: rgba(117, 36, 106, 0.3);
+            --message-border-radius: 20px;
+            --primary-color: #75246a;
+            --primary-hover: #5d1c55;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-xl: 26px;
+            --radius-full: 999px;
+            --shadow-md: 0 16px 40px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 30px 60px rgba(0, 0, 0, 0.45);
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 12px;
+            --spacing-lg: 16px;
+            --spacing-xl: 24px;
+            --spacing-xxl: 32px;
+            --transition-fast: 0.18s ease;
             --transition-normal: 0.3s ease;
-            --transition-slow: 0.5s ease;
-            
-            /* === ESPAÇAMENTOS === */
-            --spacing-xs: 8px;
-            --spacing-sm: 12px;
-            --spacing-md: 16px;
-            --spacing-lg: 24px;
-            --spacing-xl: 60px;
-            
-            /* === SOMBRAS === */
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
-            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --transition-slow: 0.45s ease;
+            --theme-background-image: none;
+            --sidebar-glass-bg: rgba(7, 7, 15, 0.92);
         }
 
-        /* ============================================================================
-           🔄 RESET E BASE
-        ============================================================================ */
-        * {
-            margin: 0;
-            padding: 0;
+        *, *::before, *::after {
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--gradient-bg);
+            margin: 0;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            background-color: var(--bg-primary);
+            background-image: var(--theme-background-image);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             background-attachment: fixed;
             color: var(--text-primary);
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        /* ============================================================================
-           📐 LAYOUT PRINCIPAL
-        ============================================================================ */
-        .app-container {
+            min-height: 100vh;
             display: flex;
-            height: 100vh;
-            width: 100%;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        /* ============================================================================
-           🎨 SIDEBAR
-        ============================================================================ */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        .alpha-banner {
+            text-align: center;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid var(--sidebar-border);
+            font-size: 14px;
+            letter-spacing: 0.04em;
+            flex-shrink: 0;
+        }
+
+        .app-container {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            background: var(--gradient-bg);
+        }
+
         .sidebar {
             width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: var(--sidebar-glass-bg);
             border-right: 1px solid var(--sidebar-border);
             display: flex;
             flex-direction: column;
-            transition: width var(--transition-normal);
             position: relative;
-            z-index: 100;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+            transition: width var(--transition-normal), transform var(--transition-normal);
+            -webkit-backdrop-filter: blur(26px);
+            backdrop-filter: blur(26px);
         }
 
         .sidebar.collapsed {
-            width: var(--sidebar-collapsed-width);
+            width: 72px;
         }
 
-        /* === HEADER DO SIDEBAR === */
+        .sidebar-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity var(--transition-normal), transform var(--transition-normal);
+        }
+
+        .sidebar.collapsed .sidebar-body {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-16px);
+        }
+
         .sidebar-header {
-            padding: var(--spacing-lg);
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-lg);
             border-bottom: 1px solid var(--sidebar-border);
-            min-height: 80px;
+            position: relative;
+            padding-right: calc(var(--spacing-lg) + 48px);
         }
 
-        .sidebar-logo {
+        .sidebar-header .sidebar-logo {
             display: flex;
             align-items: center;
             gap: var(--spacing-sm);
             flex: 1;
-            overflow: hidden;
+            border: none;
+            background: transparent;
+            color: inherit;
+            padding: var(--spacing-xs);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: background var(--transition-fast);
+            position: relative;
+            z-index: 2;
         }
+
+        .sidebar-header .sidebar-logo:hover {
+            background: var(--sidebar-item-hover);
+        }
+
+        .sidebar-header .sidebar-logo:focus-visible {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 4px;
+        }
+
+        .sidebar.collapsed .sidebar-header .sidebar-logo {
+            justify-content: center;
+            padding: var(--spacing-sm);
+            margin-left: 50px;
+        }
+
+        /* Faixa Alpha - Em Desenvolvimento */
+            .chat-messages {
+                position: relative;
+                flex: 1;
+                overflow-y: auto;
+                padding: var(--spacing-xl);
+                display: flex;
+                flex-direction: column;
+            }
+
+            .messages-container {
+                max-width: var(--chat-max-width);
+                width: 100%;
+                margin: 0 auto;
+            }
+
+            /* === TELA INICIAL (SEM MENSAGENS) === */
+            .welcome-screen {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100%;
+                text-align: left;
+                opacity: 1;
+                transition: opacity var(--transition-slow);
+                padding: var(--spacing-xl);
+            }
+
+            .welcome-screen.hidden {
+                opacity: 0;
+                pointer-events: none;
+                position: absolute;
+                inset: 0;
+            }
+
+            .agent-welcome-card {
+                width: min(640px, 100%);
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(0, 0, 0, 0.3);
+                border-radius: 28px;
+                padding: var(--spacing-xl);
+                box-shadow: var(--shadow-lg);
+            }
+
+            .agent-welcome-top {
+                display: flex;
+                gap: var(--spacing-lg);
+                align-items: center;
+                margin-bottom: var(--spacing-md);
+            }
+
+            .agent-welcome-avatar {
+                width: 72px;
+                height: 72px;
+                border-radius: 20px;
+                background: linear-gradient(135deg, rgba(117, 36, 106, 0.9), rgba(71, 173, 138, 0.9));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
+                font-weight: 700;
+            }
+
+            .agent-welcome-label {
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--text-muted);
+            }
+
+            .agent-welcome-name {
+                font-size: 32px;
+                margin: 4px 0;
+            }
+
+            .agent-welcome-specialty {
+                color: var(--text-secondary);
+                margin: 0;
+            }
+
+            .agent-welcome-description {
+                font-size: 16px;
+                line-height: 1.6;
+                color: rgba(255, 255, 255, 0.9);
+                margin-bottom: var(--spacing-lg);
+            }
+
+            .agent-welcome-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: var(--spacing-sm);
+                margin-bottom: var(--spacing-md);
+            }
+
+            .agent-welcome-type,
+            .agent-welcome-table {
+                font-size: 13px;
+                padding: 6px 12px;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                background: rgba(255, 255, 255, 0.04);
+            }
+
+            .agent-welcome-tags {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-bottom: var(--spacing-lg);
+            }
+
+            .agent-welcome-tags span {
+                font-size: 12px;
+                padding: 4px 10px;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.03);
+            }
+
+            .agent-welcome-tags .tag-empty {
+                border-style: dashed;
+                opacity: 0.7;
+            }
+
+            .agent-welcome-actions {
+                display: flex;
+                justify-content: flex-end;
+            }
+
+            .agent-welcome-btn {
+                border: none;
+                border-radius: 16px;
+                background: var(--btn-primary-bg);
+                color: var(--btn-primary-text);
+                font-weight: 600;
+                padding: var(--spacing-sm) var(--spacing-lg);
+                display: inline-flex;
+                align-items: center;
+                gap: var(--spacing-sm);
+                cursor: pointer;
+                box-shadow: var(--shadow-md);
+                transition: transform var(--transition-fast);
+            }
+
+            .agent-welcome-btn:hover {
+                transform: translateY(-2px);
+            }
+
+            .agent-avatar-chip {
+                position: absolute;
+                top: var(--spacing-lg);
+                left: var(--spacing-lg);
+                right: auto;
+                display: flex;
+                align-items: center;
+                gap: var(--spacing-sm);
+                padding: 10px 16px;
+                border-radius: 999px;
+                background: rgba(0, 0, 0, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                -webkit-backdrop-filter: blur(10px);
+                backdrop-filter: blur(10px);
+                box-shadow: var(--shadow-md);
+            }
+
+            .agent-avatar-chip.hidden {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .chip-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.15);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+            }
+
+            .chip-name {
+                font-weight: 600;
+            }
+
+            .chip-specialty {
+                font-size: 12px;
+                color: var(--text-muted);
+            }
 
         .logo-icon {
             width: 40px;
@@ -189,6 +404,15 @@
             width: 0;
         }
 
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            opacity: 0;
+            pointer-events: none;
+        }
+
         .sidebar-toggle {
             background: transparent;
             border: none;
@@ -198,6 +422,11 @@
             border-radius: 8px;
             transition: all var(--transition-fast);
             flex-shrink: 0;
+            position: absolute;
+            right: var(--spacing-lg);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
         }
 
         .sidebar-toggle:hover {
@@ -246,6 +475,7 @@
         /* === NAVEGAÇÃO === */
         .sidebar-nav {
             flex: 1;
+            min-height: 0;
             overflow-y: auto;
             padding: var(--spacing-md);
             transition: all 0.3s ease;
@@ -302,6 +532,60 @@
             color: var(--text-primary);
         }
 
+        .recent-conversations {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .conversation-tab {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: var(--text-secondary);
+            padding: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--spacing-md);
+            cursor: pointer;
+            transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+        }
+
+        .conversation-tab:hover {
+            transform: translateX(4px);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: var(--text-primary);
+        }
+
+        .conversation-tab.active {
+            border-color: var(--color-secondary);
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+
+        .conversation-tab .tab-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .conversation-tab .tab-specialty {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .recent-placeholder {
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-sm);
+            color: var(--text-muted);
+        }
+
         .nav-item i {
             width: 20px;
             text-align: center;
@@ -330,6 +614,7 @@
             position: relative;
             padding: var(--spacing-lg);
             border-top: 1px solid var(--sidebar-border);
+            flex-shrink: 0;
         }
 
         .user-profile {
@@ -810,7 +1095,7 @@
         .tree-keyword-tag {
             padding: 4px 10px;
             background: rgba(124, 58, 237, 0.1);
-            color: var(--primary-color);
+            /* color: var(--primary-color); */
             border-radius: var(--radius-md);
             font-size: 12px;
             font-weight: 500;
@@ -926,22 +1211,30 @@
 
         /* Modal para Detalhes do Agente */
         .agent-modal {
-            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background: rgba(0, 0, 0, 0.6);
+            -webkit-backdrop-filter: blur(8px);
             backdrop-filter: blur(8px);
             z-index: 10000;
             align-items: center;
             justify-content: center;
-            padding: var(--spacing-lg);
+            display: flex;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            width: 0;
+            height: 0;
+            padding: 0;
         }
 
         .agent-modal.active {
-            display: flex;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            width: 100vw;
+            height: 100vh;
+            padding: var(--spacing-lg);
         }
 
         .agent-modal-content {
@@ -1250,6 +1543,94 @@
             font-style: italic;
         }
 
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .theme-card {
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+            position: relative;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .theme-card input[type="radio"] {
+            display: none;
+        }
+
+        .theme-card.active {
+            border-color: var(--color-accent);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .theme-preview {
+            height: 140px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        /* Previews usam imagens dummy - substitua os arquivos em /static/backgrounds/ */
+        .theme-preview.theme-bg-clearcorrect { background-image: url('/static/backgrounds/theme-clearcorrect.png'); }
+        .theme-preview.theme-bg-neodent { background-image: url('/static/backgrounds/theme-neodent.png'); }
+        .theme-preview.theme-bg-straumann { background-image: url('/static/backgrounds/theme-straumann.png'); }
+        .theme-preview.theme-bg-straumann-group { background-image: url('/static/backgrounds/theme-straumann_group.png'); }
+        .theme-preview.theme-bg-midnight { background-image: url('/static/backgrounds/theme-midnight.jpg'); }
+        .theme-preview.theme-bg-oneplan { background-image: url('/static/backgrounds/theme-oneplan.png'); }
+
+        .theme-preview::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.55) 100%);
+        }
+
+        .theme-meta {
+            padding: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .theme-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .theme-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .theme-variant-badge {
+            align-self: flex-start;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .theme-card.active .theme-variant-badge {
+            border-color: var(--color-accent);
+            background: rgba(71, 173, 138, 0.15);
+            color: var(--btn-primary-text);
+        }
+
+        .theme-helper-text {
+            margin-top: var(--spacing-md);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
         .preferences-actions {
             display: flex;
             gap: var(--spacing-md);
@@ -1392,7 +1773,7 @@
             border-radius: 16px;
             padding: var(--spacing-xl);
             border: 1px solid rgba(255, 255, 255, 1);
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.1);
             border-radius: 20px;
             
         }
@@ -1697,14 +2078,16 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
+            min-height: 0;
         }
 
         /* === HEADER DO CHAT === */
         .chat-header {
             padding: var(--spacing-lg) var(--spacing-xl);
             background: rgba(0, 0, 0, 0.15);
-            backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
@@ -2108,21 +2491,64 @@
             justify-content: center;
             position: relative;
             transition: all var(--transition-slow);
+            width: 100%;
         }
 
         /* Estado inicial: centralizado verticalmente */
         .chat-input-container.centered {
-            top: -45%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: calc(100% - var(--sidebar-width));
+            top: 0;
+            left: 0;
+            transform: none;
+            width: 100%;
             max-width: var(--chat-max-width);
+            margin: var(--spacing-lg) auto 0;
         }
 
         /* Estado com mensagens: parte inferior */
         .chat-input-container.bottom {
             position: static;
             transform: none;
+            margin: 0;
+        }
+
+        .endpoint-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+
+        .endpoint-selector label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .endpoint-selector select {
+            flex: 1;
+            min-width: 220px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--text-primary);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+        }
+
+        .endpoint-selector select option {
+            color: #1f1f1f;
+        }
+
+        .endpoint-hint {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            flex: 1 1 100%;
         }
 
         .input-wrapper {
@@ -2137,6 +2563,7 @@
             gap: var(--spacing-sm);
             padding: var(--spacing-sm);
             transition: all var(--transition-fast);
+                color: var(--text-primary);
         }
 
         .input-wrapper:focus-within {
@@ -2145,20 +2572,21 @@
 
         #messageInput {
             flex: 1;
-            background: transparent;
+            background: rgba(255, 255, 255, 0.12);
             border: none;
             outline: none;
             padding: var(--spacing-md);
             font-size: 15px;
-            color: var(--text-on-white);
+            color: var(--text-primary);
             resize: none;
             max-height: 200px;
             min-height: 24px;
             font-family: inherit;
+            border-radius: 12px;
         }
 
         #messageInput::placeholder {
-            color: rgba(0, 0, 0, 0.4);
+            color: rgba(255, 255, 255, 0.65);
         }
 
         .input-actions {
@@ -2266,136 +2694,678 @@
             pointer-events: none;
             opacity: 0.6;
         }
+
+        /* ============================================================================
+           🧪 FEEDBACK TESTERS & THUMBS
+        ============================================================================ */
+        .tester-feedback-launcher {
+            position: fixed;
+            top: 0px;
+            right: 32px;
+            z-index: 1200;
+        }
+
+        .tester-feedback-button {
+            border: none;
+            border-radius: 999px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .tester-feedback-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+        }
+
+        .tester-feedback-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 13, 0.8);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 1300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-normal);
+        }
+
+        .tester-feedback-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .tester-feedback-dialog {
+            width: 100%;
+            max-width: 420px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: var(--shadow-lg);
+            color: var(--text-primary);
+            position: relative;
+        }
+
+        .tester-feedback-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .tester-section-label {
+            margin: 0;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .tester-step-subtitle {
+            margin: 0;
+            color: var(--text-secondary);
+            padding-bottom: 20px;
+        }
+
+        .tester-success-text {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .tester-feedback-header h3 {
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.3;
+        }
+
+        .tester-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .tester-feedback-step {
+            display: none;
+        }
+
+        .tester-feedback-step.active {
+            display: block;
+        }
+
+        .tester-textarea {
+            width: 100%;
+            min-height: 120px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            padding: 16px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .tester-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .tester-btn {
+            border-radius: 999px;
+            border: 1px solid transparent;
+            padding: 10px 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .tester-btn-secondary {
+            background: transparent;
+            border-color: var(--card-border);
+            color: var(--text-secondary);
+        }
+
+        .tester-btn-primary {
+            background: var(--color-primary);
+            color: #fff;
+        }
+
+        .tester-rating-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .tester-rating-option {
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            padding: 10px 0;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .tester-rating-option.selected {
+            background: var(--color-primary);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .tester-feedback-banner {
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 14px;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        .tester-feedback-banner.show {
+            display: block;
+        }
+
+        .tester-feedback-banner.error {
+            background: rgba(244, 67, 54, 0.1);
+            color: #ff9e9e;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .tester-feedback-success {
+            text-align: center;
+            padding: 30px 10px;
+        }
+
+        .tester-feedback-success i {
+            font-size: 42px;
+            color: var(--color-primary);
+            margin-bottom: 12px;
+        }
+
+        .message-feedback {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .thumb-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--card-border);
+            background: transparent;
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .thumb-btn:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .thumb-btn.active-thumb-up {
+            background: rgba(34, 197, 94, 0.12);
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+        }
+
+        .thumb-btn.active-thumb-down {
+            background: rgba(244, 67, 54, 0.12);
+            border-color: rgba(244, 67, 54, 0.5);
+            color: #f44336;
+        }
+
+        .message-feedback-status {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .tester-feedback-launcher {
+                right: 16px;
+                bottom: 16px;
+            }
+
+            .tester-feedback-dialog {
+                border-radius: 18px;
+                padding: 22px;
+            }
+        }
+
+        #fileInput,
+        #ingestionStatus,
+        #mcpFields,
+        #coordinatorForm,
+        #factoryStatus,
+        #modalTableSection,
+        #modalChildrenSection {
+            display: none;
+        }
+
+        #subagentForm {
+            display: block;
+        }
+
+        /* ============================================================================
+           🧭 NOVA CONVERSA - CATÁLOGO DE AGENTES
+        ============================================================================ */
+        .new-chat-view {
+            position: absolute;
+            inset: 0;
+            background: rgba(7, 7, 9, 0.9);
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+            padding: var(--spacing-xl);
+            overflow-y: auto;
+            z-index: 60;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(24px);
+            transition: opacity var(--transition-normal), transform var(--transition-normal);
+        }
+
+        .new-chat-view.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .new-chat-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .new-chat-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .new-chat-subtitle {
+            color: var(--text-secondary);
+            max-width: 540px;
+            line-height: 1.4;
+        }
+
+        .new-chat-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            align-items: center;
+        }
+
+        .new-chat-search {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 14px;
+            min-width: 280px;
+        }
+
+        .new-chat-search input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            width: 100%;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .new-chat-filter {
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            font-size: 14px;
+            min-width: 180px;
+        }
+
+        .new-chat-close {
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: var(--text-primary);
+            padding: 10px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .new-chat-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .new-chat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .new-chat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            cursor: pointer;
+            transition: transform var(--transition-fast), border-color var(--transition-fast);
+            min-height: 260px;
+        }
+
+        .new-chat-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .new-chat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .new-chat-chip {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .new-chat-chip.subagent {
+            color: #9fd5c1;
+            border-color: rgba(79, 209, 178, 0.4);
+        }
+
+        .new-chat-chip.coordinator {
+            color: #f4c38d;
+            border-color: rgba(244, 195, 141, 0.4);
+        }
+
+        .new-chat-chip.orchestrator {
+            color: #c9b7ff;
+            border-color: rgba(201, 183, 255, 0.4);
+        }
+
+        .new-chat-chip.highlight {
+            color: #f9f871;
+            border-color: rgba(249, 248, 113, 0.5);
+        }
+
+        .new-chat-card h3 {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .new-chat-specialty {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .new-chat-description {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .new-chat-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .new-chat-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 6px 10px;
+            border-radius: 999px;
+        }
+
+        .new-chat-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .new-chat-tag {
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+
+        .new-chat-cta {
+            margin-top: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-weight: 600;
+        }
+
+        .new-chat-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: var(--spacing-xl);
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+        }
+
+        .new-chat-empty i {
+            font-size: 32px;
+            margin-bottom: var(--spacing-md);
+            display: block;
+        }
+
+        .new-chat-retry {
+            margin-top: var(--spacing-md);
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        @media (max-width: 1024px) {
+            .new-chat-view {
+                padding: var(--spacing-lg);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .new-chat-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .new-chat-search,
+            .new-chat-filter,
+            .new-chat-close {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="alpha-banner">Versão Alpha - Em Desenvolvimento</div>
+    <div class="alpha-banner">Versão Beta - Em Testes</div>
     <div class="app-container">
         <!-- ========== SIDEBAR ========== -->
         <aside class="sidebar" id="sidebar">
             <!-- Header -->
             <div class="sidebar-header">
-                <div class="sidebar-logo">
+                <button class="sidebar-logo" id="sidebarLogo" type="button" title="Abrir menu" aria-label="Abrir menu">
                     <div class="logo-icon">
                         <img src="/static/assets/logo.png" alt="Neoson Logo">
                     </div>
                     <span class="logo-text">Neoson</span>
-                </div>
-                <button class="sidebar-toggle" id="sidebarToggle" title="Recolher sidebar">
-                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Recolher sidebar" aria-label="Alternar sidebar" aria-expanded="true">
+                    <i class="fas fa-chevron-left"></i>
                 </button>
             </div>
 
-            <!-- Novo Chat -->
-            <button class="new-chat-btn" id="newChatBtn" onclick="startNewChat()">
-                <i class="fas fa-plus"></i>
-                <span class="btn-text">Nova Conversa</span>
-            </button>
+            <div class="sidebar-body">
+                <!-- Novo Chat -->
+                <button class="new-chat-btn" id="newChatBtn" onclick="startNewChat()">
+                    <i class="fas fa-plus"></i>
+                    <span class="btn-text">Nova Conversa</span>
+                </button>
 
-            <!-- Navegação -->
-            <nav class="sidebar-nav">
-                <div class="nav-section">
-                    <div class="nav-section-title">Recentes</div>
-                    <div class="nav-item active" onclick="showTab('chat')">
-                        <i class="fas fa-message"></i>
-                        <span class="nav-item-text">Conversa Atual</span>
-                    </div>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Ferramentas</div>
-                    <div class="nav-item" onclick="showTab('agents')">
-                        <i class="fas fa-sitemap"></i>
-                        <span class="nav-item-text">Árvore de Agentes</span>
-                    </div>
-                    <div class="nav-item" onclick="showTab('knowledge')">
-                        <i class="fas fa-book"></i>
-                        <span class="nav-item-text">Base de Conhecimento</span>
-                    </div>
-                    <div class="nav-item" onclick="showTab('factory')">
-                        <i class="fas fa-industry" title="Fábrica"></i>
-                        <span class="nav-item-text">Fábrica de Agentes</span>
-                    </div>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Configurações</div>
-                    <div class="nav-item" onclick="showTab('preferences')">
-                        <i class="fas fa-cog"></i>
-                        <span class="nav-item-text">Preferências</span>
-                    </div>
-                </div>
-            </nav>
-
-            <!-- Footer -->
-            <div class="sidebar-footer">
-                <div class="user-profile" id="userProfile">
-                    <div class="user-avatar" id="userAvatarSidebar">U</div>
-                    <div class="user-info">
-                        <div class="user-name" id="userName">Usuário</div>
-                        <div class="user-role" id="userRole">Admin</div>
-                    </div>
-                </div>
-
-                <!-- Dropdown do Perfil -->
-                <div class="user-profile-dropdown" id="userDropdown">
-                    <div class="dropdown-header">
-                        <div class="dropdown-user-info">
-                            <div class="dropdown-avatar" id="userAvatarDropdown">U</div>
-                            <div class="dropdown-user-details">
-                                <div class="dropdown-user-name" id="dropdownUserName">Usuário</div>
-                                <div class="dropdown-user-email" id="dropdownUserEmail">usuario@empresa.com</div>
+                <!-- Navegação -->
+                <nav class="sidebar-nav">
+                    <div class="nav-section">
+                        <div class="nav-section-title">Recentes</div>
+                        <div class="recent-conversations" id="recentConversations">
+                            <div class="recent-placeholder">
+                                <i class="fas fa-comments"></i>
+                                <span>Inicie uma conversa para aparecer aqui</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="dropdown-body">
-                        <div class="profile-info-group">
-                            <div class="profile-info-label">Cargo</div>
-                            <div class="profile-info-value" id="dropdownCargo">
-                                <i class="fas fa-briefcase"></i>
-                                <span>Gerente</span>
-                            </div>
+                    <div class="nav-section">
+                        <div class="nav-section-title">Ferramentas</div>
+                        <div class="nav-item" onclick="showTab('agents')">
+                            <i class="fas fa-sitemap"></i>
+                            <span class="nav-item-text">Árvore de Agentes</span>
                         </div>
-
-                        <div class="profile-info-group">
-                            <div class="profile-info-label">Área</div>
-                            <div class="profile-info-value" id="dropdownArea">
-                                <i class="fas fa-building"></i>
-                                <span>Tecnologia da Informação</span>
-                            </div>
+                        <div class="nav-item" onclick="showTab('knowledge')">
+                            <i class="fas fa-book"></i>
+                            <span class="nav-item-text">Base de Conhecimento</span>
                         </div>
-
-                        <div class="profile-info-group">
-                            <div class="profile-info-label">País</div>
-                            <div class="profile-info-value" id="dropdownPais">
-                                <i class="fas fa-globe"></i>
-                                <span>Brasil</span>
-                            </div>
-                        </div>
-
-                        <div class="profile-info-group">
-                            <div class="profile-info-label">Departamento</div>
-                            <div class="profile-info-value" id="dropdownDepartamento">
-                                <i class="fas fa-users"></i>
-                                <span>Desenvolvimento</span>
-                            </div>
-                        </div>
-
-                        <div class="profile-info-group">
-                            <div class="profile-info-label">Projetos</div>
-                            <div class="profile-info-value" id="dropdownProjetos">
-                                <i class="fas fa-project-diagram"></i>
-                                <span>Neoson AI, Portal Corporativo</span>
-                            </div>
+                        <div class="nav-item" onclick="showTab('factory')">
+                            <i class="fas fa-industry" title="Fábrica"></i>
+                            <span class="nav-item-text">Fábrica de Agentes</span>
                         </div>
                     </div>
 
-                    <div class="dropdown-footer">
-                        <button class="dropdown-logout-btn" id="dropdownLogoutBtn">
-                            <i class="fas fa-sign-out-alt"></i>
-                            Sair da Conta
-                        </button>
+                    <div class="nav-section">
+                        <div class="nav-section-title">Configurações</div>
+                        <div class="nav-item" onclick="showTab('preferences')">
+                            <i class="fas fa-cog"></i>
+                            <span class="nav-item-text">Preferências</span>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Footer -->
+                <div class="sidebar-footer">
+                    <div class="user-profile" id="userProfile">
+                        <div class="user-avatar" id="userAvatarSidebar">U</div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">Usuário</div>
+                            <div class="user-role" id="userRole">Admin</div>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown do Perfil -->
+                    <div class="user-profile-dropdown" id="userDropdown">
+                        <div class="dropdown-header">
+                            <div class="dropdown-user-info">
+                                <div class="dropdown-avatar" id="userAvatarDropdown">U</div>
+                                <div class="dropdown-user-details">
+                                    <div class="dropdown-user-name" id="dropdownUserName">Usuário</div>
+                                    <div class="dropdown-user-email" id="dropdownUserEmail">usuario@empresa.com</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-body">
+                            <div class="profile-info-group">
+                                <div class="profile-info-label">Cargo</div>
+                                <div class="profile-info-value" id="dropdownCargo">
+                                    <i class="fas fa-briefcase"></i>
+                                    <span>Gerente</span>
+                                </div>
+                            </div>
+
+                            <div class="profile-info-group">
+                                <div class="profile-info-label">Área</div>
+                                <div class="profile-info-value" id="dropdownArea">
+                                    <i class="fas fa-building"></i>
+                                    <span>Tecnologia da Informação</span>
+                                </div>
+                            </div>
+
+                            <div class="profile-info-group">
+                                <div class="profile-info-label">País</div>
+                                <div class="profile-info-value" id="dropdownPais">
+                                    <i class="fas fa-globe"></i>
+                                    <span>Brasil</span>
+                                </div>
+                            </div>
+
+                            <div class="profile-info-group">
+                                <div class="profile-info-label">Departamento</div>
+                                <div class="profile-info-value" id="dropdownDepartamento">
+                                    <i class="fas fa-users"></i>
+                                    <span>Desenvolvimento</span>
+                                </div>
+                            </div>
+
+                            <div class="profile-info-group">
+                                <div class="profile-info-label">Projetos</div>
+                                <div class="profile-info-value" id="dropdownProjetos">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <span>Neoson AI, Portal Corporativo</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-footer">
+                            <button class="dropdown-logout-btn" id="dropdownLogoutBtn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Sair da Conta
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2542,6 +3512,81 @@
                             </div>
                         </div>
 
+                        <!-- Personalização Visual -->
+                        <div class="preferences-section">
+                            <div class="section-header">
+                                <h2><i class="fas fa-palette"></i> Personalização Visual</h2>
+                                <p class="section-description">Escolha um background e deixe o sistema com a sua cara</p>
+                            </div>
+
+                            <div class="theme-grid" id="themeGrid">
+                                <label class="theme-card" data-theme-id="theme-clearcorrect" data-variant="light">
+                                    <input type="radio" name="themeBackground" value="theme-clearcorrect">
+                                    <div class="theme-preview theme-bg-clearcorrect"></div>
+                                    <div class="theme-meta">
+                                        <span class="theme-name">ClearCorrect</span>
+                                        <span class="theme-description">Tema Clear Aqua</span>
+                                        <span class="theme-variant-badge">Modo Claro</span>
+                                    </div>
+                                </label>
+
+                                <label class="theme-card" data-theme-id="theme-neodent" data-variant="dark">
+                                    <input type="radio" name="themeBackground" value="theme-neodent">
+                                    <div class="theme-preview theme-bg-neodent"></div>
+                                    <div class="theme-meta">
+                                        <span class="theme-name">Neodent</span>
+                                        <span class="theme-description">Visual Neodent Purple</span>
+                                        <span class="theme-variant-badge">Modo Escuro</span>
+                                    </div>
+                                </label>
+
+                                <label class="theme-card" data-theme-id="theme-straumann" data-variant="dark">
+                                    <input type="radio" name="themeBackground" value="theme-straumann">
+                                    <div class="theme-preview theme-bg-straumann"></div>
+                                    <div class="theme-meta">
+                                        <span class="theme-name">Straumann</span>
+                                        <span class="theme-description">Tema Straumann Mint Green</span>
+                                        <span class="theme-variant-badge">Modo Escuro</span>
+                                    </div>
+                                </label>
+
+                                <label class="theme-card" data-theme-id="theme-straumann-group" data-variant="dark">
+                                    <input type="radio" name="themeBackground" value="theme-straumann-group">
+                                    <div class="theme-preview theme-bg-straumann-group"></div>
+                                    <div class="theme-meta">
+                                        <span class="theme-name">Straumann Group</span>
+                                        <span class="theme-description">Tema corporativo unificado Straumann Blue</span>
+                                        <span class="theme-variant-badge">Modo Escuro</span>
+                                    </div>
+                                </label>
+
+                                <label class="theme-card" data-theme-id="theme-midnight" data-variant="dark">
+                                    <input type="radio" name="themeBackground" value="theme-midnight">
+                                    <div class="theme-preview theme-bg-midnight"></div>
+                                    <div class="theme-meta">
+                                        <span class="theme-name">Midnight Circuit</span>
+                                        <span class="theme-description">Painel minimalista e escuro</span>
+                                        <span class="theme-variant-badge">Modo Escuro</span>
+                                    </div>
+                                </label>
+
+                                <label class="theme-card" data-theme-id="theme-oneplan" data-variant="light">
+                                    <input type="radio" name="themeBackground" value="theme-oneplan">
+                                    <div class="theme-preview theme-bg-oneplan"></div>
+                                    <div class="theme-meta">
+                                        <span class="theme-name">One Plan</span>
+                                        <span class="theme-description">One Team, One Message, One Plan. Simple Genius</span>
+                                        <span class="theme-variant-badge">Modo Claro</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <p class="theme-helper-text">
+                                <i class="fas fa-info-circle"></i>
+                                Substitua as imagens em <code>/static/backgrounds/</code> para personalizar cada estação ou campanha especial.
+                            </p>
+                        </div>
+
                         <!-- Botões de Ação -->
                         <div class="preferences-actions">
                             <button class="pref-btn pref-btn-secondary" onclick="resetPreferences()">
@@ -2587,7 +3632,7 @@
                             <div class="upload-area" id="uploadArea">
                                 <i class="fas fa-cloud-upload-alt"></i>
                                 <p>Arraste arquivos aqui ou clique para selecionar</p>
-                                <input type="file" id="fileInput" multiple accept=".pdf,.docx" style="display:none;">
+                                <input type="file" id="fileInput" multiple accept=".pdf,.docx">
                                 <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
                                     <i class="fas fa-folder-open"></i>
                                     Selecionar Arquivos
@@ -2784,7 +3829,7 @@
                         </div>
 
                         <!-- Info de Status -->
-                        <div class="ingestion-status" id="ingestionStatus" style="display: none;">
+                        <div class="ingestion-status" id="ingestionStatus">
                             <div class="status-content">
                                 <div class="status-spinner"></div>
                                 <div class="status-text">
@@ -2819,7 +3864,7 @@
                 </div>
 
                 <!-- Formulário de Subagente -->
-                <div class="agent-form" id="subagentForm" style="display: block;">
+                <div class="agent-form" id="subagentForm">
                     <div class="form-section">
                         <h3><i class="fas fa-id-card"></i> Informações Básicas</h3>
                         <div class="form-grid">
@@ -2901,7 +3946,7 @@
                             </label>
                             <small>Permite que o agente use ferramentas externas</small>
                         </div>
-                        <div id="mcpFields" style="display: none;">
+                        <div id="mcpFields">
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label for="subagent_mcp_category">Categoria MCP</label>
@@ -2927,7 +3972,7 @@
                 </div>
 
                 <!-- Formulário de Coordenador -->
-                <div class="agent-form" id="coordinatorForm" style="display: none;">
+                <div class="agent-form" id="coordinatorForm">
                     <div class="form-section">
                         <h3><i class="fas fa-id-card"></i> Informações Básicas</h3>
                         <div class="form-grid">
@@ -3021,7 +4066,7 @@
                 </div>
 
                 <!-- Status Popup -->
-                <div class="factory-status" id="factoryStatus" style="display: none;">
+                <div class="factory-status" id="factoryStatus">
                     <div class="status-spinner"></div>
                     <span id="factoryStatusText">Processando...</span>
                 </div>
@@ -3031,32 +4076,37 @@
             <div class="chat-messages" id="chatMessages">
                 <!-- Tela de Boas-vindas -->
                 <div class="welcome-screen" id="welcomeScreen">
-                    <div class="welcome-logo">
-                        <img src="/static/assets/logo.png" alt="Neoson Logo">
+                    <div class="agent-welcome-card" id="agentWelcomeCard">
+                        <div class="agent-welcome-top">
+                            <div class="agent-welcome-avatar" id="agentWelcomeAvatar">N</div>
+                            <div class="agent-welcome-heading">
+                                <span class="agent-welcome-label">Você vai conversar com</span>
+                                <h1 class="agent-welcome-name" id="agentWelcomeName">Neoson</h1>
+                                <p class="agent-welcome-specialty" id="agentWelcomeSpecialty">Orquestrador multi-agente</p>
+                            </div>
+                        </div>
+                        <p class="agent-welcome-description" id="agentWelcomeDescription">
+                            Analisa o contexto completo, escolhe o especialista ideal e coordena a resposta de ponta a ponta.
+                        </p>
+                        <div class="agent-welcome-meta">
+                            <span class="agent-welcome-type" id="agentWelcomeType">Orquestrador</span>
+                            <span class="agent-welcome-table hidden" id="agentWelcomeTable"></span>
+                        </div>
+                        <div class="agent-welcome-tags" id="agentWelcomeKeywords"></div>
+                        <div class="agent-welcome-actions">
+                            <button class="agent-welcome-btn" type="button" onclick="focusMessageInput()">
+                                <i class="fas fa-comment-dots"></i>
+                                Começar conversa
+                            </button>
+                        </div>
                     </div>
-                    <h1 class="welcome-title">Como posso ajudar, Emmanuel?</h1>
-                    <p class="welcome-subtitle">
-                        Sou o Neoson, seu assistente inteligente multi-agente. 
-                        Posso ajudar com desenvolvimento, análise de dados, automação e muito mais.
-                    </p>
-                    
-                    <div class="welcome-suggestions">
-                        <div class="suggestion-card" onclick="sendSuggestion('Explique como funcionam os agentes no sistema')">
-                            <div class="suggestion-icon">🤖</div>
-                            <div class="suggestion-text">Explique como funcionam os agentes no sistema</div>
-                        </div>
-                        <div class="suggestion-card" onclick="sendSuggestion('Crie um agente especializado em Python')">
-                            <div class="suggestion-icon">🐍</div>
-                            <div class="suggestion-text">Crie um agente especializado em Python</div>
-                        </div>
-                        <div class="suggestion-card" onclick="sendSuggestion('Mostre os logs mais recentes')">
-                            <div class="suggestion-icon">📋</div>
-                            <div class="suggestion-text">Mostre os logs mais recentes</div>
-                        </div>
-                        <div class="suggestion-card" onclick="sendSuggestion('Como posso fazer upload de documentos?')">
-                            <div class="suggestion-icon">📄</div>
-                            <div class="suggestion-text">Como posso fazer upload de documentos?</div>
-                        </div>
+                </div>
+
+                <div class="agent-avatar-chip hidden" id="agentAvatarChip">
+                    <div class="chip-avatar" id="agentChipAvatar">N</div>
+                    <div class="chip-info">
+                        <span class="chip-name" id="agentChipName">Neoson</span>
+                        <span class="chip-specialty" id="agentChipSpecialty">Orquestrador</span>
                     </div>
                 </div>
 
@@ -3084,11 +4134,46 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Painel de seleção de nova conversa -->
+            <section class="new-chat-view" id="newChatView" aria-hidden="true">
+                <div class="new-chat-header">
+                    <div>
+                        <div class="new-chat-title">Comece uma nova conversa</div>
+                        <p class="new-chat-subtitle">
+                            Explore os agentes disponíveis, veja suas especialidades e escolha quem pode ajudar melhor antes de enviar a primeira mensagem.
+                        </p>
+                    </div>
+                    <div class="new-chat-controls">
+                        <div class="new-chat-search">
+                            <i class="fas fa-search"></i>
+                            <input type="search" id="newChatSearch" placeholder="Busque por nome, especialidade ou palavra-chave" autocomplete="off">
+                        </div>
+                        <select class="new-chat-filter" id="newChatFilter">
+                            <option value="all">Todos os agentes</option>
+                            <option value="coordinator">Agentes coordenadores</option>
+                            <option value="subagent">Subagentes especialistas</option>
+                            <option value="orchestrator">Neoson (orquestrador)</option>
+                        </select>
+                        <button type="button" class="new-chat-close" id="newChatCloseBtn">
+                            <i class="fas fa-arrow-left"></i>
+                            Voltar para o chat
+                        </button>
+                    </div>
+                </div>
+
+                <div class="new-chat-grid" id="newChatCards">
+                    <div class="new-chat-empty">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Carregando catálogo de agentes...
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
     <!-- Modal de Detalhes do Agente -->
-    <div class="agent-modal" id="agentModal">
+    <div class="agent-modal" id="agentModal" role="dialog" aria-modal="true" aria-hidden="true">
         <div class="agent-modal-content">
             <div class="agent-modal-header">
                 <button class="modal-close-btn" onclick="closeAgentModal()" title="Fechar" aria-label="Fechar modal">
@@ -3127,11 +4212,11 @@
                             <div class="modal-info-label">Tipo</div>
                             <div class="modal-info-value" id="modalType">-</div>
                         </div>
-                        <div class="modal-info-item" id="modalTableSection" style="display: none;">
+                        <div class="modal-info-item" id="modalTableSection">
                             <div class="modal-info-label">Base de Dados</div>
                             <div class="modal-info-value" id="modalTable">-</div>
                         </div>
-                        <div class="modal-info-item" id="modalChildrenSection" style="display: none;">
+                        <div class="modal-info-item" id="modalChildrenSection">
                             <div class="modal-info-label">Subordinados</div>
                             <div class="modal-info-value" id="modalChildren">-</div>
                         </div>
@@ -3162,6 +4247,69 @@
         </div>
     </div>
 
+    <div class="tester-feedback-launcher" id="testerFeedbackLauncher">
+        <button class="tester-feedback-button" id="testerFeedbackButton" type="button">
+            <i class="fas fa-flask"></i>
+            Feedback Beta
+        </button>
+    </div>
+
+    <div class="tester-feedback-modal" id="testerFeedbackModal" aria-hidden="true">
+        <div class="tester-feedback-dialog" role="dialog" aria-labelledby="testerFeedbackTitle">
+            <div class="tester-feedback-header">
+                <div>
+                    <p class="tester-section-label">Programa de Testes</p>
+                    <h3 id="testerFeedbackTitle">Compartilhe seu feedback</h3>
+                </div>
+                <button class="tester-close-btn" type="button" id="testerFeedbackClose" aria-label="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="tester-feedback-banner error" id="testerFeedbackError"></div>
+            <div class="tester-feedback-step active" id="testerFeedbackStepComment">
+                <p class="tester-step-subtitle">Olá tester, conte pra #TECH o que está funcionando bem ou o que ainda precisa de atenções com o Neoson.</p>
+                <textarea class="tester-textarea" id="testerFeedbackMessage" placeholder="Escreva aqui seu feedback..."></textarea>
+                <div class="tester-actions">
+                    <button class="tester-btn tester-btn-primary" id="testerFeedbackNext" type="button">
+                        Continuar
+                    </button>
+                </div>
+            </div>
+            <div class="tester-feedback-step" id="testerFeedbackStepRating">
+                <p class="tester-step-subtitle">Agora avalie a experiência geral com o novo Neoson (0 = precisa melhorar, 10 = excelente).</p>
+                <div class="tester-rating-grid" id="testerRatingGrid">
+                    <button type="button" class="tester-rating-option" data-value="0">0</button>
+                    <button type="button" class="tester-rating-option" data-value="1">1</button>
+                    <button type="button" class="tester-rating-option" data-value="2">2</button>
+                    <button type="button" class="tester-rating-option" data-value="3">3</button>
+                    <button type="button" class="tester-rating-option" data-value="4">4</button>
+                    <button type="button" class="tester-rating-option" data-value="5">5</button>
+                    <button type="button" class="tester-rating-option" data-value="6">6</button>
+                    <button type="button" class="tester-rating-option" data-value="7">7</button>
+                    <button type="button" class="tester-rating-option" data-value="8">8</button>
+                    <button type="button" class="tester-rating-option" data-value="9">9</button>
+                    <button type="button" class="tester-rating-option" data-value="10">10</button>
+                </div>
+                <div class="tester-actions">
+                    <button class="tester-btn tester-btn-secondary" type="button" id="testerFeedbackBack">
+                        Voltar
+                    </button>
+                    <button class="tester-btn tester-btn-primary" type="button" id="testerFeedbackSubmit" disabled>
+                        Enviar feedback
+                    </button>
+                </div>
+            </div>
+            <div class="tester-feedback-step tester-feedback-success" id="testerFeedbackSuccess">
+                <i class="fas fa-check-circle"></i>
+                <h4>Muito obrigado! 🙌</h4>
+                <p class="tester-success-text">Seu feedback ajuda a priorizar melhorias para toda a equipe interna.</p>
+                <button class="tester-btn tester-btn-primary" type="button" id="testerFeedbackDone">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================================================
         // 🎯 VARIÁVEIS GLOBAIS
@@ -3169,27 +4317,343 @@
         let sidebarCollapsed = false;
         let hasMessages = false;
         let currentToken = localStorage.getItem('token');
+        let currentUserLogin = '';
         
         // Variáveis para árvore de agentes
         let agentsData = null;
         window.agentsTreeLoaded = false;
         let currentAgentData = null;
 
+        const NEOSON_AGENT = {
+            identifier: 'neoson',
+            name: 'Neoson (Orquestrador)',
+            specialty: 'Roteamento Inteligente',
+            endpoint: '/api/chat',
+            type: 'orchestrator',
+            description: 'Orquestrador central que entende o contexto completo e encaminha sua solicitação para o especialista ideal.',
+            keywords: ['roteamento', 'delegação', 'contexto', 'multi-agente'],
+            table_name: '',
+            avatar: '🤖'
+        };
+        let agentCatalog = [NEOSON_AGENT];
+        let activeAgentContext = NEOSON_AGENT;
+        const recentConversationsContainer = document.getElementById('recentConversations');
+        const conversationPicker = document.getElementById('conversationPicker');
+        const conversationPickerList = document.getElementById('conversationPickerList');
+        const conversations = new Map();
+        let conversationOrder = [];
+        let activeConversationId = null;
+        const newChatView = document.getElementById('newChatView');
+        const newChatCards = document.getElementById('newChatCards');
+        const newChatSearchInput = document.getElementById('newChatSearch');
+        const newChatFilterSelect = document.getElementById('newChatFilter');
+        const newChatCloseBtn = document.getElementById('newChatCloseBtn');
+        let newChatAgents = [];
+        let newChatLoadPromise = null;
+
+        // Referências de elementos da área de chat precisam ficar disponíveis antes dos listeners
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const inputContainer = document.getElementById('inputContainer');
+        const chatMessages = document.getElementById('chatMessages');
+        const agentWelcomeCard = document.getElementById('agentWelcomeCard');
+        const agentWelcomeAvatar = document.getElementById('agentWelcomeAvatar');
+        const agentWelcomeName = document.getElementById('agentWelcomeName');
+        const agentWelcomeSpecialty = document.getElementById('agentWelcomeSpecialty');
+        const agentWelcomeDescription = document.getElementById('agentWelcomeDescription');
+        const agentWelcomeType = document.getElementById('agentWelcomeType');
+        const agentWelcomeTable = document.getElementById('agentWelcomeTable');
+        const agentWelcomeKeywords = document.getElementById('agentWelcomeKeywords');
+        const agentAvatarChip = document.getElementById('agentAvatarChip');
+        const agentChipAvatar = document.getElementById('agentChipAvatar');
+        const agentChipName = document.getElementById('agentChipName');
+        const agentChipSpecialty = document.getElementById('agentChipSpecialty');
+        const chatArea = document.querySelector('.chat-messages');
+        const agentsTreeView = document.getElementById('agentsTreeView');
+        const userProfile = document.getElementById('userProfile');
+        const userDropdown = document.getElementById('userDropdown');
+        const dropdownLogoutBtn = document.getElementById('dropdownLogoutBtn');
+        const testerLauncherButton = document.getElementById('testerFeedbackButton');
+        const testerModal = document.getElementById('testerFeedbackModal');
+        const testerCloseBtn = document.getElementById('testerFeedbackClose');
+        const testerDoneBtn = document.getElementById('testerFeedbackDone');
+        const testerBackBtn = document.getElementById('testerFeedbackBack');
+        const testerNextBtn = document.getElementById('testerFeedbackNext');
+        const testerSubmitBtn = document.getElementById('testerFeedbackSubmit');
+        const testerTextarea = document.getElementById('testerFeedbackMessage');
+        const testerStepComment = document.getElementById('testerFeedbackStepComment');
+        const testerStepRating = document.getElementById('testerFeedbackStepRating');
+        const testerStepSuccess = document.getElementById('testerFeedbackSuccess');
+        const testerErrorBanner = document.getElementById('testerFeedbackError');
+        const testerRatingGrid = document.getElementById('testerRatingGrid');
+
         // ============================================================================
         // 🎨 SIDEBAR
         // ============================================================================
         const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarLogoButton = document.getElementById('sidebarLogo');
         const sidebar = document.getElementById('sidebar');
+
+        function setSidebarCollapsed(collapsed) {
+            if (!sidebar) return;
+            sidebarCollapsed = collapsed;
+            sidebar.classList.toggle('collapsed', collapsed);
+            sidebar.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
+
+            if (sidebarToggle) {
+                const icon = sidebarToggle.querySelector('i');
+                if (icon) {
+                    icon.className = collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
+                }
+                sidebarToggle.setAttribute('aria-expanded', (!collapsed).toString());
+            }
+
+            if (sidebarLogoButton) {
+                sidebarLogoButton.setAttribute('aria-label', collapsed ? 'Abrir menu lateral' : 'Neoson');
+            }
+        }
 
         if (sidebarToggle && sidebar) {
             sidebarToggle.addEventListener('click', () => {
-                sidebarCollapsed = !sidebarCollapsed;
-                sidebar.classList.toggle('collapsed');
-                
-                // Atualizar ícone
-                const icon = sidebarToggle.querySelector('i');
-                if (icon) {
-                    icon.className = sidebarCollapsed ? 'fas fa-bars' : 'fas fa-times';
+                setSidebarCollapsed(!sidebarCollapsed);
+            });
+        }
+
+        if (sidebarLogoButton) {
+            sidebarLogoButton.addEventListener('click', () => {
+                if (sidebarCollapsed) {
+                    setSidebarCollapsed(false);
+                }
+            });
+
+            sidebarLogoButton.addEventListener('keydown', (event) => {
+                if (!sidebarCollapsed) {
+                    return;
+                }
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSidebarCollapsed(false);
+                }
+            });
+        }
+
+        // ============================================================================
+        // 🧪 FEEDBACK TESTERS POP-UP
+        // ============================================================================
+        const testerFeedbackState = {
+            rating: null,
+            step: 'comment',
+            sending: false
+        };
+
+        function setTesterStep(step) {
+            if (!testerModal) return;
+            testerFeedbackState.step = step;
+            [testerStepComment, testerStepRating, testerStepSuccess].forEach((el) => {
+                if (el) el.classList.remove('active');
+            });
+            if (step === 'comment' && testerStepComment) testerStepComment.classList.add('active');
+            if (step === 'rating' && testerStepRating) testerStepRating.classList.add('active');
+            if (step === 'success' && testerStepSuccess) testerStepSuccess.classList.add('active');
+        }
+
+        function resetTesterFeedback() {
+            testerFeedbackState.rating = null;
+            testerFeedbackState.sending = false;
+            if (testerTextarea) testerTextarea.value = '';
+            if (testerSubmitBtn) testerSubmitBtn.disabled = true;
+            if (testerErrorBanner) {
+                testerErrorBanner.textContent = '';
+                testerErrorBanner.classList.remove('show');
+            }
+            if (testerRatingGrid) {
+                testerRatingGrid.querySelectorAll('.tester-rating-option').forEach((btn) => {
+                    btn.classList.remove('selected');
+                });
+            }
+            setTesterStep('comment');
+        }
+
+        function openTesterModal() {
+            if (!testerModal) return;
+            resetTesterFeedback();
+            testerModal.classList.add('active');
+            testerModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            requestAnimationFrame(() => testerTextarea && testerTextarea.focus());
+        }
+
+        function closeTesterModal(reset = false) {
+            if (!testerModal) return;
+            testerModal.classList.remove('active');
+            testerModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+            if (reset) {
+                resetTesterFeedback();
+            }
+        }
+
+        function handleTesterNextStep() {
+            setTesterStep('rating');
+        }
+
+        function handleTesterBackStep() {
+            setTesterStep('comment');
+        }
+
+        function handleTesterRatingSelect(value) {
+            testerFeedbackState.rating = value;
+            if (testerRatingGrid) {
+                testerRatingGrid.querySelectorAll('.tester-rating-option').forEach((btn) => {
+                    btn.classList.toggle('selected', Number(btn.dataset.value) === value);
+                });
+            }
+            if (testerSubmitBtn && !testerFeedbackState.sending) {
+                testerSubmitBtn.disabled = Number.isNaN(value);
+            }
+        }
+
+        function showTesterError(message) {
+            if (!testerErrorBanner) return;
+            testerErrorBanner.textContent = message;
+            testerErrorBanner.classList.add('show');
+        }
+
+        function clearTesterError() {
+            if (!testerErrorBanner) return;
+            testerErrorBanner.textContent = '';
+            testerErrorBanner.classList.remove('show');
+        }
+
+        function setTesterLoading(isLoading) {
+            testerFeedbackState.sending = isLoading;
+            if (testerSubmitBtn) {
+                testerSubmitBtn.disabled = isLoading || testerFeedbackState.rating === null;
+                testerSubmitBtn.textContent = isLoading ? 'Enviando...' : 'Enviar feedback';
+            }
+            if (testerNextBtn) testerNextBtn.disabled = isLoading;
+            if (testerBackBtn) testerBackBtn.disabled = isLoading;
+        }
+
+        async function submitTesterFeedback() {
+            if (!testerModal || testerFeedbackState.rating === null) {
+                return;
+            }
+            clearTesterError();
+            setTesterLoading(true);
+            const comentario = testerTextarea ? testerTextarea.value.trim() : '';
+            const payload = {
+                usuario_id: currentUserLogin || 'tester_interno',
+                comentario,
+                nota: testerFeedbackState.rating,
+                origem: 'tester_popup',
+                contexto: {
+                    page: window.location.pathname,
+                    agente_atual: activeAgentContext ? activeAgentContext.identifier : 'neoson'
+                }
+            };
+
+            const headers = { 'Content-Type': 'application/json' };
+            if (currentToken) {
+                headers['Authorization'] = `Bearer ${currentToken}`;
+            }
+
+            try {
+                const response = await fetch('/api/feedback/testers', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const details = await response.json().catch(() => ({}));
+                    throw new Error(details.detail || 'Erro ao registrar feedback');
+                }
+
+                setTesterStep('success');
+            } catch (error) {
+                console.error('Erro ao enviar feedback de testes:', error);
+                showTesterError(error.message || 'Não foi possível enviar seu feedback agora.');
+            } finally {
+                setTesterLoading(false);
+            }
+        }
+
+        if (testerLauncherButton) {
+            testerLauncherButton.addEventListener('click', openTesterModal);
+        }
+
+        if (testerCloseBtn) {
+            testerCloseBtn.addEventListener('click', () => closeTesterModal(true));
+        }
+
+        if (testerDoneBtn) {
+            testerDoneBtn.addEventListener('click', () => closeTesterModal(true));
+        }
+
+        if (testerBackBtn) {
+            testerBackBtn.addEventListener('click', handleTesterBackStep);
+        }
+
+        if (testerNextBtn) {
+            testerNextBtn.addEventListener('click', handleTesterNextStep);
+        }
+
+        if (testerSubmitBtn) {
+            testerSubmitBtn.addEventListener('click', submitTesterFeedback);
+        }
+
+        if (testerRatingGrid) {
+            testerRatingGrid.addEventListener('click', (event) => {
+                const target = event.target.closest('.tester-rating-option');
+                if (!target) return;
+                const value = Number(target.dataset.value);
+                if (!Number.isNaN(value)) {
+                    handleTesterRatingSelect(value);
+                }
+            });
+        }
+
+        if (testerModal) {
+            testerModal.addEventListener('click', (event) => {
+                if (event.target === testerModal) {
+                    closeTesterModal(true);
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && testerModal && testerModal.classList.contains('active')) {
+                closeTesterModal(true);
+            }
+        });
+
+        // Estado inicial
+        setSidebarCollapsed(false);
+
+        if (newChatCloseBtn) {
+            newChatCloseBtn.addEventListener('click', () => hideNewChatView());
+        }
+
+        if (newChatSearchInput) {
+            newChatSearchInput.addEventListener('input', () => {
+                renderNewChatCards();
+            });
+        }
+
+        if (newChatFilterSelect) {
+            newChatFilterSelect.addEventListener('change', () => {
+                renderNewChatCards();
+            });
+        }
+
+        if (agentAvatarChip) {
+            agentAvatarChip.addEventListener('click', () => {
+                const agentData = activeAgentContext || getActiveAgent();
+                if (agentData) {
+                    showAgentDetails(normalizeAgentData(agentData));
                 }
             });
         }
@@ -3197,150 +4661,341 @@
         // ============================================================================
         // 💬 CHAT
         // ============================================================================
-        const messageInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const welcomeScreen = document.getElementById('welcomeScreen');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const inputContainer = document.getElementById('inputContainer');
-        const chatMessages = document.getElementById('chatMessages');
-        
-        // Elementos para navegação
-        const chatArea = document.querySelector('.chat-messages');
-        const agentsTreeView = document.getElementById('agentsTreeView');
-        
-        // Elementos do perfil de usuário
-        const userProfile = document.getElementById('userProfile');
-        const userDropdown = document.getElementById('userDropdown');
-        const dropdownLogoutBtn = document.getElementById('dropdownLogoutBtn');
 
-        // Auto-resize textarea
-        messageInput.addEventListener('input', () => {
-            messageInput.style.height = 'auto';
-            messageInput.style.height = messageInput.scrollHeight + 'px';
-            
-            // Habilitar/desabilitar botão de envio
-            sendBtn.disabled = !messageInput.value.trim();
-        });
+        if (messageInput && sendBtn) {
+            // Auto-resize textarea
+            messageInput.addEventListener('input', () => {
+                messageInput.style.height = 'auto';
+                messageInput.style.height = messageInput.scrollHeight + 'px';
+                
+                // Habilitar/desabilitar botão de envio
+                sendBtn.disabled = !messageInput.value.trim();
+            });
 
-        // Enviar com Enter (Shift+Enter para nova linha)
-        messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (messageInput.value.trim()) {
-                    sendMessage();
+            // Enviar com Enter (Shift+Enter para nova linha)
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (messageInput.value.trim()) {
+                        sendMessage();
+                    }
                 }
-            }
-        });
+            });
 
-        sendBtn.addEventListener('click', sendMessage);
+            sendBtn.addEventListener('click', sendMessage);
+        } else {
+            console.warn('Elementos de entrada do chat não foram encontrados.');
+        }
 
-        // ============================================================================
-        // 📤 ENVIAR MENSAGEM
-        // ============================================================================
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message) return;
+        initializeAgentCatalog();
 
-            // Primeira mensagem: animação de transição
-            if (!hasMessages) {
-                animateFirstMessage();
-            }
-
-            // Adicionar mensagem do usuário
-            addMessage(message, 'user');
-            
-            // Limpar input
-            messageInput.value = '';
-            messageInput.style.height = 'auto';
-            sendBtn.disabled = true;
-
-            // Mostrar typing indicator
-            const typingId = addTypingIndicator();
-
+        async function initializeAgentCatalog() {
             try {
-                // Enviar para API
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
+                const response = await fetch('/api/agents', {
                     headers: {
-                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify({ mensagem: message })
+                    }
                 });
-
+                if (!response.ok) {
+                    throw new Error('Falha ao buscar catálogo de agentes');
+                }
                 const data = await response.json();
-
-                // Remover typing indicator
-                removeTypingIndicator(typingId);
-
-                if (data.success && data.response) {
-                    addMessage(data.response, 'assistant');
-                } else if (data.detail) {
-                    addMessage(`Erro: ${data.detail}`, 'assistant');
-                } else {
-                    addMessage('Desculpe, não consegui processar sua mensagem.', 'assistant');
+                if (data.success && Array.isArray(data.agents)) {
+                    const sanitizedAgents = data.agents.map(enrichAgentEntry);
+                    const hasNeoson = sanitizedAgents.some(agent => agent.identifier === NEOSON_AGENT.identifier);
+                    agentCatalog = hasNeoson ? sanitizedAgents : [NEOSON_AGENT, ...sanitizedAgents];
+                    populateConversationPicker();
+                    return;
                 }
             } catch (error) {
-                removeTypingIndicator(typingId);
-                addMessage('Desculpe, ocorreu um erro ao processar sua mensagem.', 'assistant');
-                console.error('Erro:', error);
+                console.error('Erro ao carregar agentes diretos:', error);
+            }
+            populateConversationPicker();
+        }
+
+        function enrichAgentEntry(agent) {
+            if (!agent || typeof agent !== 'object') {
+                return NEOSON_AGENT;
+            }
+            return {
+                identifier: agent.identifier,
+                name: agent.name || formatIdentifierTitle(agent.identifier),
+                specialty: agent.specialty || '',
+                type: agent.type || 'subagent',
+                endpoint: agent.endpoint || `/api/agents/${agent.identifier}`,
+                ask_endpoint: agent.ask_endpoint || null,
+                description: agent.description || '',
+                keywords: Array.isArray(agent.keywords) ? agent.keywords : [],
+                table_name: agent.table_name || agent.table || '',
+                avatar: agent.avatar || agent.icon || ''
+            };
+        }
+
+        function getAgentDisplayName(agent = NEOSON_AGENT) {
+            if (!agent) return 'Agente';
+            return agent.name || formatIdentifierTitle(agent.identifier);
+        }
+
+        function resolveAvatarGlyph(agent = NEOSON_AGENT) {
+            if (agent && agent.avatar) {
+                return agent.avatar;
+            }
+            if (agent && agent.icon) {
+                return agent.icon;
+            }
+            const source = getAgentDisplayName(agent).trim();
+            if (!source) {
+                return 'N';
+            }
+            const codePoint = source.codePointAt(0);
+            const char = codePoint ? String.fromCodePoint(codePoint) : 'N';
+            if (/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(char)) {
+                return char.toUpperCase();
+            }
+            return char;
+        }
+
+        function normalizeAgentData(agent = NEOSON_AGENT) {
+            const source = agent || NEOSON_AGENT;
+            return {
+                identifier: source.identifier || 'neoson',
+                name: getAgentDisplayName(source),
+                specialty: source.specialty || '',
+                type: source.type || 'subagent',
+                description: source.description || '',
+                keywords: Array.isArray(source.keywords) ? source.keywords : [],
+                endpoint: source.endpoint || null,
+                ask_endpoint: source.ask_endpoint || null,
+                table_name: source.table_name || '',
+                avatar: source.avatar || source.icon || '',
+                children: Array.isArray(source.children) ? source.children : [],
+                stats: source.stats || null
+            };
+        }
+
+        function updateAgentContext(agent = NEOSON_AGENT) {
+            const normalizedAgent = normalizeAgentData(agent);
+            activeAgentContext = normalizedAgent;
+            updateWelcomeCard(normalizedAgent);
+            updateAgentChip(normalizedAgent);
+            updateMessagePlaceholder(normalizedAgent);
+        }
+
+        function updateWelcomeCard(agent) {
+            if (!agentWelcomeCard) return;
+            const displayName = getAgentDisplayName(agent);
+            if (agentWelcomeName) {
+                agentWelcomeName.textContent = displayName;
+            }
+            if (agentWelcomeSpecialty) {
+                agentWelcomeSpecialty.textContent = agent.specialty || 'Especialidade não informada';
+            }
+            if (agentWelcomeDescription) {
+                agentWelcomeDescription.textContent = resolveAgentDescription(agent);
+            }
+            if (agentWelcomeAvatar) {
+                agentWelcomeAvatar.textContent = resolveAvatarGlyph(agent);
+            }
+            if (agentWelcomeType) {
+                agentWelcomeType.textContent = agentTypeLabel(agent);
+            }
+            if (agentWelcomeTable) {
+                if (agent.table_name) {
+                    agentWelcomeTable.textContent = agent.table_name;
+                    agentWelcomeTable.classList.remove('hidden');
+                } else {
+                    agentWelcomeTable.classList.add('hidden');
+                }
+            }
+            renderWelcomeKeywords(Array.isArray(agent.keywords) ? agent.keywords : []);
+        }
+
+        function renderWelcomeKeywords(keywords) {
+            if (!agentWelcomeKeywords) return;
+            agentWelcomeKeywords.innerHTML = '';
+            const list = Array.isArray(keywords) ? keywords.slice(0, 4) : [];
+            if (!list.length) {
+                const emptyTag = document.createElement('span');
+                emptyTag.className = 'tag-empty';
+                emptyTag.textContent = 'Sem palavras-chave cadastradas';
+                agentWelcomeKeywords.appendChild(emptyTag);
+                return;
+            }
+
+            list.forEach((keyword) => {
+                const tag = document.createElement('span');
+                tag.textContent = keyword;
+                agentWelcomeKeywords.appendChild(tag);
+            });
+        }
+
+        function updateAgentChip(agent) {
+            if (!agentAvatarChip) return;
+            const displayName = getAgentDisplayName(agent);
+            if (agentChipName) {
+                agentChipName.textContent = displayName;
+            }
+            if (agentChipSpecialty) {
+                agentChipSpecialty.textContent = agent.specialty || agentTypeLabel(agent);
+            }
+            if (agentChipAvatar) {
+                agentChipAvatar.textContent = resolveAvatarGlyph(agent);
             }
         }
 
-        // ============================================================================
-        // 🎬 ANIMAÇÃO DA PRIMEIRA MENSAGEM
-        // ============================================================================
-        function animateFirstMessage() {
-            hasMessages = true;
-            
-            // Esconder tela de boas-vindas
+        function toggleAgentChip(visible) {
+            if (!agentAvatarChip) return;
+            agentAvatarChip.classList.toggle('hidden', !visible);
+        }
+
+        function updateMessagePlaceholder(agent) {
+            if (!messageInput) return;
+            const displayName = getAgentDisplayName(agent);
+            const simpleName = displayName.split('(')[0].trim() || displayName;
+            messageInput.placeholder = `Envie uma mensagem para ${simpleName}...`;
+        }
+
+        function focusMessageInput() {
+            if (messageInput) {
+                messageInput.focus();
+            }
+        }
+
+        function getAgentById(identifier) {
+            if (!identifier) return NEOSON_AGENT;
+            const fromCatalog = agentCatalog.find(agent => agent.identifier === identifier);
+            if (fromCatalog) {
+                return fromCatalog;
+            }
+            const conversation = conversations.get(identifier);
+            if (conversation) {
+                return {
+                    identifier: conversation.agentId,
+                    name: conversation.displayName,
+                    specialty: conversation.specialty,
+                    type: conversation.type,
+                    endpoint: conversation.endpoint || null,
+                    ask_endpoint: conversation.ask_endpoint || null,
+                    description: conversation.description || '',
+                    keywords: conversation.keywords || [],
+                    table_name: conversation.table_name || '',
+                    avatar: conversation.avatar || ''
+                };
+            }
+            return NEOSON_AGENT;
+        }
+
+        function getActiveAgent() {
+            if (activeConversationId) {
+                return getAgentById(activeConversationId);
+            }
+            return NEOSON_AGENT;
+        }
+
+        function ensureConversation(agent) {
+            const safeAgent = agent || NEOSON_AGENT;
+            const identifier = safeAgent.identifier || 'neoson';
+            if (!conversations.has(identifier)) {
+                conversations.set(identifier, {
+                    agentId: identifier,
+                    displayName: safeAgent.name || formatIdentifierTitle(identifier),
+                    specialty: safeAgent.specialty || '',
+                    type: safeAgent.type || 'subagent',
+                    description: safeAgent.description || '',
+                    keywords: Array.isArray(safeAgent.keywords) ? safeAgent.keywords : [],
+                    endpoint: safeAgent.endpoint || null,
+                    ask_endpoint: safeAgent.ask_endpoint || null,
+                    table_name: safeAgent.table_name || '',
+                    avatar: safeAgent.avatar || '',
+                    messages: [],
+                    lastUserMessage: ''
+                });
+                conversationOrder = [identifier, ...conversationOrder.filter(id => id !== identifier)];
+                renderRecentConversations();
+            }
+            return conversations.get(identifier);
+        }
+
+        function renderRecentConversations() {
+            if (!recentConversationsContainer) return;
+            recentConversationsContainer.innerHTML = '';
+
+            if (!conversationOrder.length) {
+                recentConversationsContainer.innerHTML = `
+                    <div class="recent-placeholder">
+                        <i class="fas fa-comments"></i>
+                        <span>Inicie uma conversa para aparecer aqui</span>
+                    </div>
+                `;
+                return;
+            }
+
+            conversationOrder.forEach((conversationId) => {
+                const conversation = conversations.get(conversationId);
+                if (!conversation) return;
+                const subtitle = conversation.specialty || agentTypeLabel(conversation);
+                const tab = document.createElement('button');
+                tab.className = `conversation-tab${conversationId === activeConversationId ? ' active' : ''}`;
+                tab.innerHTML = `
+                    <div>
+                        <div class="tab-title">${conversation.displayName}</div>
+                        ${subtitle ? `<div class="tab-specialty">${subtitle}</div>` : ''}
+                    </div>
+                    <i class="fas fa-angle-right"></i>
+                `;
+                tab.addEventListener('click', () => openConversationTab(conversationId));
+                recentConversationsContainer.appendChild(tab);
+            });
+        }
+
+        function showWelcomeState() {
+            if (!welcomeScreen || !messagesContainer) return;
+            welcomeScreen.classList.remove('hidden');
+            messagesContainer.classList.add('hidden');
+            inputContainer.classList.add('centered');
+            inputContainer.classList.remove('bottom');
+            toggleAgentChip(false);
+        }
+
+        function showMessagesState() {
+            if (!welcomeScreen || !messagesContainer) return;
             welcomeScreen.classList.add('hidden');
-            
-            // Mostrar container de mensagens
             messagesContainer.classList.remove('hidden');
-            
-            // Mover input para baixo
             inputContainer.classList.remove('centered');
             inputContainer.classList.add('bottom');
         }
 
-        // ============================================================================
-        // 💬 ADICIONAR MENSAGEM COM SUPORTE A MARKDOWN
-        // ============================================================================
-        function addMessage(text, type) {
+        function renderMessageEntry(entry) {
+            if (!messagesContainer) return;
+            const { text, type, options = {} } = entry;
+            const { agentName } = options;
             const messageDiv = document.createElement('div');
             messageDiv.className = `message message-${type}`;
-            
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
-            
             const headerDiv = document.createElement('div');
             headerDiv.className = 'message-header';
-            headerDiv.innerHTML = type === 'user' 
-                ? '<i class="fas fa-user"></i> Você' 
-                : '<i class="fas fa-robot"></i> Neoson';
-            
+            if (type === 'user') {
+                headerDiv.innerHTML = '<i class="fas fa-user"></i> Você';
+            } else {
+                const label = agentName || 'Neoson';
+                headerDiv.innerHTML = `<i class="fas fa-robot"></i> ${label}`;
+            }
+
             const textDiv = document.createElement('div');
             textDiv.className = 'message-text';
-            
-            // Se for mensagem do assistente, renderizar Markdown
+
             if (type === 'assistant' || type === 'agent') {
                 try {
-                    // Configurar Marked.js para melhor renderização
                     marked.setOptions({
-                        breaks: true,        // Quebras de linha como <br>
-                        gfm: true,          // GitHub Flavored Markdown
-                        headerIds: false,    // Sem IDs nos headers
-                        mangle: false        // Não modificar emails
+                        breaks: true,
+                        gfm: true,
+                        headerIds: false,
+                        mangle: false
                     });
-                    
-                    // Renderizar Markdown
                     const htmlContent = marked.parse(text);
                     textDiv.innerHTML = htmlContent;
-                    
-                    // Aplicar syntax highlighting em blocos de código
                     textDiv.querySelectorAll('pre code').forEach((block) => {
-                        // Adicionar botão de copiar
                         const copyBtn = document.createElement('button');
                         copyBtn.className = 'code-copy-btn';
                         copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar';
@@ -3354,28 +5009,693 @@
                             });
                         };
                         block.parentElement.appendChild(copyBtn);
-                        
-                        // Aplicar highlight
                         hljs.highlightElement(block);
                     });
-                    
                 } catch (error) {
                     console.error('Erro ao renderizar Markdown:', error);
-                    textDiv.textContent = text;  // Fallback para texto puro
+                    textDiv.textContent = text;
                 }
             } else {
-                // Mensagens do usuário não precisam de Markdown
                 textDiv.textContent = text;
             }
-            
+
             contentDiv.appendChild(headerDiv);
             contentDiv.appendChild(textDiv);
             messageDiv.appendChild(contentDiv);
-            
+            if (type === 'assistant' || type === 'agent') {
+                const feedbackControls = buildMessageFeedback(entry);
+                if (feedbackControls) {
+                    messageDiv.appendChild(feedbackControls);
+                }
+            }
             messagesContainer.appendChild(messageDiv);
-            
-            // Scroll para baixo
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function renderConversationMessages(conversation) {
+            if (!messagesContainer || !conversation) return;
+            if (!conversation.messages.length) {
+                messagesContainer.innerHTML = '';
+                showWelcomeState();
+                hasMessages = false;
+                return;
+            }
+
+            showMessagesState();
+            messagesContainer.innerHTML = '';
+            conversation.messages.forEach(entry => renderMessageEntry(entry));
+            hasMessages = true;
+            toggleAgentChip(true);
+        }
+
+        function buildMessageFeedback(entry) {
+            if (!entry || !entry.options || !entry.options.feedbackId) {
+                return null;
+            }
+            const container = document.createElement('div');
+            container.className = 'message-feedback';
+            const statusSpan = document.createElement('span');
+            statusSpan.className = 'message-feedback-status';
+            statusSpan.textContent = entry.options.feedbackStatus === 'sent'
+                ? 'Feedback registrado — obrigado!'
+                : 'Como foi a resposta?';
+            container.appendChild(statusSpan);
+
+            if (entry.options.feedbackStatus === 'sent') {
+                return container;
+            }
+
+            const upBtn = document.createElement('button');
+            upBtn.type = 'button';
+            upBtn.className = 'thumb-btn';
+            upBtn.innerHTML = '<i class="fas fa-thumbs-up"></i>';
+
+            const downBtn = document.createElement('button');
+            downBtn.type = 'button';
+            downBtn.className = 'thumb-btn';
+            downBtn.innerHTML = '<i class="fas fa-thumbs-down"></i>';
+
+            upBtn.addEventListener('click', () => handleThumbSelection(entry, 5, statusSpan, upBtn, downBtn));
+            downBtn.addEventListener('click', () => handleThumbSelection(entry, 1, statusSpan, upBtn, downBtn));
+
+            container.appendChild(upBtn);
+            container.appendChild(downBtn);
+            return container;
+        }
+
+        async function handleThumbSelection(entry, rating, statusSpan, upBtn, downBtn) {
+            if (!entry || entry.options.feedbackStatus === 'sent') {
+                return;
+            }
+            entry.options.feedbackStatus = 'sending';
+            statusSpan.textContent = 'Enviando feedback...';
+            upBtn.disabled = true;
+            downBtn.disabled = true;
+
+            try {
+                await submitThumbFeedback(entry, rating);
+                entry.options.feedbackStatus = 'sent';
+                statusSpan.textContent = 'Feedback registrado — obrigado!';
+                upBtn.remove();
+                downBtn.remove();
+            } catch (error) {
+                console.error('Erro ao enviar feedback rápido:', error);
+                entry.options.feedbackStatus = null;
+                statusSpan.textContent = 'Erro ao enviar. Tente novamente.';
+                upBtn.disabled = false;
+                downBtn.disabled = false;
+            }
+        }
+
+        async function submitThumbFeedback(entry, rating) {
+            const question = (entry.options && entry.options.pergunta) ? entry.options.pergunta : 'Pergunta não informada';
+            const payload = {
+                usuario_id: currentUserLogin || 'usuario_tester',
+                feedback_id: entry.options && entry.options.feedbackId ? entry.options.feedbackId : generateFeedbackId(),
+                rating,
+                comentario: null,
+                pergunta: question,
+                resposta: entry.text,
+                agente: (entry.options && entry.options.agentName) ? entry.options.agentName : 'Neoson',
+                classificacao: (entry.options && entry.options.classificacao) ? entry.options.classificacao : 'geral'
+            };
+
+            const headers = { 'Content-Type': 'application/json' };
+            if (currentToken) {
+                headers['Authorization'] = `Bearer ${currentToken}`;
+            }
+
+            const response = await fetch('/api/feedback', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const details = await response.json().catch(() => ({}));
+                throw new Error(details.detail || 'Falha ao registrar feedback');
+            }
+        }
+
+        function setActiveConversation(conversationId) {
+            const conversation = conversations.get(conversationId) || ensureConversation(getAgentById(conversationId));
+            activeConversationId = conversationId;
+            conversationOrder = [conversationId, ...conversationOrder.filter(id => id !== conversationId)];
+            updateAgentContext(getAgentById(conversationId));
+            renderRecentConversations();
+            renderConversationMessages(conversation);
+        }
+
+        function openConversationTab(conversationId) {
+            showTab('chat');
+            setActiveConversation(conversationId);
+            focusMessageInput();
+        }
+        window.openConversationTab = openConversationTab;
+
+        function populateConversationPicker() {
+            if (!conversationPickerList) return;
+            conversationPickerList.innerHTML = '';
+            agentCatalog.forEach(agent => {
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'conversation-card';
+                if (agent.identifier === activeConversationId) {
+                    card.classList.add('active');
+                }
+                card.innerHTML = `
+                    <div class="conversation-card-title">${agent.name || agent.identifier}</div>
+                    ${agent.specialty ? `<div class="conversation-card-subtitle">${agent.specialty}</div>` : ''}
+                `;
+                card.addEventListener('click', () => handleAgentSelection(agent.identifier));
+                conversationPickerList.appendChild(card);
+            });
+        }
+
+        function showConversationPicker() {
+            if (!conversationPicker) return;
+            conversationPicker.classList.add('active');
+        }
+
+        function hideConversationPicker() {
+            if (!conversationPicker) return;
+            conversationPicker.classList.remove('active');
+        }
+
+        function handleAgentSelection(agentId) {
+            const agent = getAgentById(agentId);
+            ensureConversation(agent);
+            hideConversationPicker();
+            setActiveConversation(agent.identifier);
+            focusMessageInput();
+        }
+
+        // ============================================================================
+        // 🧭 NOVA CONVERSA - CATÁLOGO DE AGENTES
+        // ============================================================================
+        async function loadNewChatAgents(force = false) {
+            if (newChatAgents.length && !force) {
+                return newChatAgents;
+            }
+
+            if (newChatLoadPromise && !force) {
+                return newChatLoadPromise;
+            }
+
+            newChatLoadPromise = (async () => {
+                if (newChatCards) {
+                    newChatCards.innerHTML = `
+                        <div class="new-chat-empty">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Atualizando catálogo de agentes...
+                        </div>
+                    `;
+                }
+
+                try {
+                    const response = await fetch('/api/factory/agents', {
+                        headers: {
+                            'Authorization': `Bearer ${currentToken}`
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Falha ao buscar agentes');
+                    }
+
+                    const data = await response.json();
+                    const registryAgents = Array.isArray(data.agents) ? data.agents : [];
+                    const mapped = registryAgents.map(mapRegistryAgent);
+
+                    if (!mapped.some(agent => agent.identifier === 'neoson')) {
+                        mapped.unshift(createOrchestratorSummary());
+                    }
+
+                    newChatAgents = mapped;
+                    syncAgentCatalogWithRegistry(mapped);
+                    renderNewChatCards();
+                    return mapped;
+                } catch (error) {
+                    console.error('Erro ao carregar catálogo de agentes:', error);
+                    if (newChatCards) {
+                        newChatCards.innerHTML = `
+                            <div class="new-chat-empty">
+                                <i class="fas fa-triangle-exclamation"></i>
+                                Não foi possível carregar os agentes agora.<br>
+                                <button type="button" class="new-chat-retry" onclick="retryNewChatLoad()">Tentar novamente</button>
+                            </div>
+                        `;
+                    }
+                    throw error;
+                } finally {
+                    newChatLoadPromise = null;
+                }
+            })();
+
+            return newChatLoadPromise;
+        }
+
+        function mapRegistryAgent(agent) {
+            if (!agent || typeof agent !== 'object') {
+                return createOrchestratorSummary();
+            }
+
+            return {
+                identifier: agent.identifier,
+                name: agent.name || formatIdentifierTitle(agent.identifier),
+                specialty: agent.specialty || '',
+                type: agent.type || 'subagent',
+                description: agent.description || '',
+                keywords: Array.isArray(agent.keywords) ? agent.keywords : [],
+                table_name: agent.table_name || agent.table || '',
+                children: Array.isArray(agent.children) ? agent.children : [],
+                endpoint: agent.endpoint || `/api/agents/${agent.identifier}`,
+                ask_endpoint: agent.ask_endpoint || (agent.file_path ? `/ask_agentes/${agent.file_path}` : null),
+                file_path: agent.file_path || null,
+                avatar: agent.avatar || agent.icon || '',
+                highlight: false
+            };
+        }
+
+        function formatIdentifierTitle(identifier = '') {
+            return identifier
+                .split(/[-_]/)
+                .filter(Boolean)
+                .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+                .join(' ') || 'Agente';
+        }
+
+        function createOrchestratorSummary() {
+            return {
+                identifier: NEOSON_AGENT.identifier,
+                name: NEOSON_AGENT.name,
+                specialty: NEOSON_AGENT.specialty,
+                type: 'orchestrator',
+                description: 'Analisa o contexto completo, escolhe o especialista ideal e coordena a resposta de ponta a ponta.',
+                keywords: ['roteamento', 'delegação', 'contexto', 'multi-agente'],
+                table_name: '',
+                children: [],
+                endpoint: NEOSON_AGENT.endpoint,
+                ask_endpoint: null,
+                file_path: null,
+                avatar: NEOSON_AGENT.avatar || '',
+                highlight: true
+            };
+        }
+
+        function renderNewChatCards() {
+            if (!newChatCards) return;
+
+            if (!newChatAgents.length) {
+                newChatCards.innerHTML = `
+                    <div class="new-chat-empty">
+                        <i class="fas fa-database"></i>
+                        Ainda estamos carregando os agentes disponíveis.
+                    </div>
+                `;
+                return;
+            }
+
+            const querySource = newChatSearchInput ? newChatSearchInput.value : '';
+            const query = querySource.trim().toLowerCase();
+            const filter = newChatFilterSelect ? newChatFilterSelect.value : 'all';
+
+            const filtered = newChatAgents.filter((agent) => {
+                const matchesFilter = filter === 'all' || agent.type === filter;
+                if (!matchesFilter) return false;
+
+                if (!query) return true;
+
+                const haystack = [
+                    agent.name,
+                    agent.identifier,
+                    agent.specialty,
+                    agent.description,
+                    (agent.keywords || []).join(' ')
+                ].join(' ').toLowerCase();
+
+                return haystack.includes(query);
+            });
+
+            if (!filtered.length) {
+                newChatCards.innerHTML = '';
+                const empty = document.createElement('div');
+                empty.className = 'new-chat-empty';
+                empty.innerHTML = '<i class="fas fa-magnifying-glass"></i>';
+                const text = document.createElement('p');
+                text.textContent = query ? `Nenhum agente encontrado para "${query}".` : 'Nenhum agente encontrado.';
+                empty.appendChild(text);
+                newChatCards.appendChild(empty);
+                return;
+            }
+
+            newChatCards.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+
+            filtered.forEach((agent) => {
+                const card = document.createElement('article');
+                card.className = 'new-chat-card';
+                card.setAttribute('role', 'button');
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('aria-label', `Conversar com ${agent.name || agent.identifier}`);
+
+                const header = document.createElement('div');
+                header.className = 'new-chat-card-header';
+
+                const typeChip = document.createElement('span');
+                typeChip.className = `new-chat-chip ${agent.type || 'subagent'}`;
+                typeChip.textContent = agentTypeLabel(agent);
+                header.appendChild(typeChip);
+
+                if (agent.highlight) {
+                    const highlightChip = document.createElement('span');
+                    highlightChip.className = 'new-chat-chip highlight';
+                    highlightChip.textContent = 'Recomendado';
+                    header.appendChild(highlightChip);
+                }
+
+                const title = document.createElement('h3');
+                title.textContent = agent.name || agent.identifier;
+
+                const specialty = document.createElement('p');
+                specialty.className = 'new-chat-specialty';
+                specialty.textContent = agent.specialty || 'Especialidade não informada';
+
+                const description = document.createElement('p');
+                description.className = 'new-chat-description';
+                description.textContent = resolveAgentDescription(agent);
+
+                const meta = document.createElement('div');
+                meta.className = 'new-chat-meta';
+                buildAgentMeta(agent).forEach((metaItem) => meta.appendChild(metaItem));
+
+                const tags = document.createElement('div');
+                tags.className = 'new-chat-tags';
+                buildKeywordTags(agent.keywords).forEach((tag) => tags.appendChild(tag));
+
+                const cta = document.createElement('div');
+                cta.className = 'new-chat-cta';
+                cta.innerHTML = '<span>Conversar agora</span><i class="fas fa-arrow-right"></i>';
+
+                card.appendChild(header);
+                card.appendChild(title);
+                card.appendChild(specialty);
+                card.appendChild(description);
+                if (meta.childNodes.length) {
+                    card.appendChild(meta);
+                }
+                if (tags.childNodes.length) {
+                    card.appendChild(tags);
+                }
+                card.appendChild(cta);
+
+                card.addEventListener('click', () => startConversationFromCard(agent.identifier));
+                card.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        startConversationFromCard(agent.identifier);
+                    }
+                });
+
+                fragment.appendChild(card);
+            });
+
+            newChatCards.appendChild(fragment);
+        }
+
+        function agentTypeLabel(agent) {
+            switch (agent.type) {
+                case 'coordinator':
+                    return 'Agente Coordenador';
+                case 'orchestrator':
+                    return 'Orquestrador';
+                case 'subagent':
+                default:
+                    return 'Subagente Especialista';
+            }
+        }
+
+        function resolveAgentDescription(agent) {
+            if (agent.description) {
+                return agent.description;
+            }
+            if (agent.specialty) {
+                return `Especialista em ${agent.specialty.toLowerCase()} e pronto para orientar suas solicitações.`;
+            }
+            if (agent.type === 'coordinator') {
+                return 'Coordena subagentes e distribui as demandas para o time correto.';
+            }
+            return 'Agente preparado para apoiar nas demandas desta área.';
+        }
+
+        function buildAgentMeta(agent) {
+            const items = [];
+
+            if (agent.type === 'subagent' && agent.table_name) {
+                const span = document.createElement('span');
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-database';
+                span.appendChild(icon);
+                span.appendChild(document.createTextNode(agent.table_name));
+                items.push(span);
+            }
+
+            if (agent.type === 'coordinator') {
+                const span = document.createElement('span');
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-users';
+                span.appendChild(icon);
+                const count = Array.isArray(agent.children) ? agent.children.length : 0;
+                span.appendChild(document.createTextNode(`${count} subagentes`));
+                items.push(span);
+            }
+
+            if (agent.type === 'orchestrator') {
+                const span = document.createElement('span');
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-wand-magic-sparkles';
+                span.appendChild(icon);
+                span.appendChild(document.createTextNode('Delegação inteligente'));
+                items.push(span);
+            }
+
+            return items;
+        }
+
+        function buildKeywordTags(keywords = []) {
+            return keywords.slice(0, 4).map((keyword) => {
+                const tag = document.createElement('span');
+                tag.className = 'new-chat-tag';
+                tag.textContent = keyword;
+                return tag;
+            });
+        }
+
+        async function showNewChatView() {
+            if (!newChatView) return;
+            showTab('chat');
+            newChatView.classList.add('active');
+            newChatView.setAttribute('aria-hidden', 'false');
+
+            try {
+                await loadNewChatAgents();
+            } catch (error) {
+                console.error('Erro ao preparar nova conversa:', error);
+            }
+
+            if (newChatSearchInput) {
+                newChatSearchInput.focus();
+            }
+        }
+
+        function hideNewChatView() {
+            if (!newChatView) return;
+            newChatView.classList.remove('active');
+            newChatView.setAttribute('aria-hidden', 'true');
+            if (messageInput) {
+                messageInput.focus();
+            }
+        }
+
+        function startConversationFromCard(agentId) {
+            hideNewChatView();
+            handleAgentSelection(agentId);
+        }
+
+        function syncAgentCatalogWithRegistry(registryAgents) {
+            registryAgents.forEach((agent) => {
+                if (!agent || !agent.identifier) return;
+                const normalized = enrichAgentEntry(agent);
+                const index = agentCatalog.findIndex(existing => existing.identifier === normalized.identifier);
+                if (index === -1) {
+                    agentCatalog.push(normalized);
+                } else {
+                    agentCatalog[index] = { ...agentCatalog[index], ...normalized };
+                }
+
+                if (activeConversationId === normalized.identifier) {
+                    updateAgentContext(normalized);
+                }
+            });
+
+            populateConversationPicker();
+        }
+
+        function retryNewChatLoad() {
+            loadNewChatAgents(true).catch(() => {
+                // mensagens de erro já são tratadas em loadNewChatAgents
+            });
+        }
+
+        window.retryNewChatLoad = retryNewChatLoad;
+
+        // Inicializar conversa padrão
+        ensureConversation(NEOSON_AGENT);
+        setActiveConversation('neoson');
+        populateConversationPicker();
+
+        function buildEndpointPayload(agent, message) {
+            if (!agent) return null;
+            const payload = { mensagem: message };
+
+            if (agent.identifier === 'neoson') {
+                return {
+                    url: '/api/chat',
+                    payload
+                };
+            }
+
+            if (agent.endpoint) {
+                return {
+                    url: agent.endpoint,
+                    payload
+                };
+            }
+
+            if (agent.ask_endpoint) {
+                return {
+                    url: agent.ask_endpoint,
+                    payload
+                };
+            }
+
+            return null;
+        }
+
+        // ============================================================================
+        // 📤 ENVIAR MENSAGEM
+        // ============================================================================
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Adicionar mensagem do usuário
+            const selectedAgent = getActiveAgent();
+            const conversation = ensureConversation(selectedAgent);
+            const conversationId = conversation.agentId;
+            if (activeConversationId !== conversationId) {
+                setActiveConversation(conversationId);
+            }
+
+            addMessage(message, 'user', {}, conversationId);
+            
+            // Limpar input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            sendBtn.disabled = true;
+
+            const endpointInfo = buildEndpointPayload(selectedAgent, message);
+
+            if (!endpointInfo) {
+                addMessage('Não foi possível determinar o destino da mensagem.', 'assistant', {}, conversationId);
+                return;
+            }
+
+            // Mostrar typing indicator
+            const typingId = addTypingIndicator();
+
+            try {
+                const response = await fetch(endpointInfo.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(endpointInfo.payload)
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                // Remover typing indicator
+                removeTypingIndicator(typingId);
+
+                if (!response.ok) {
+                    const errMsg = data.detail || data.error || 'Falha ao enviar mensagem.';
+                    addMessage(`Erro: ${errMsg}`, 'assistant', {}, conversationId);
+                    return;
+                }
+
+                const successFlag = (typeof data.success === 'boolean') ? data.success : data.sucesso;
+                const resposta = data.response || data.resposta;
+                const agentName = data.agent_usado || selectedAgent.name || 'Neoson';
+                const messageType = conversationId === 'neoson' ? 'assistant' : 'agent';
+                const classification = data.classificacao || data.classification || 'geral';
+
+                if (successFlag && resposta) {
+                    addMessage(resposta, messageType, {
+                        agentName,
+                        classificacao: classification,
+                        agentIdentifier: selectedAgent.identifier || conversationId
+                    }, conversationId);
+                } else if (data.detail) {
+                    addMessage(`Erro: ${data.detail}`, 'assistant', {}, conversationId);
+                } else if (data.error) {
+                    addMessage(`Erro: ${data.error}`, 'assistant', {}, conversationId);
+                } else {
+                    addMessage('Desculpe, não consegui processar sua mensagem.', 'assistant', {}, conversationId);
+                }
+            } catch (error) {
+                removeTypingIndicator(typingId);
+                addMessage('Desculpe, ocorreu um erro ao processar sua mensagem.', 'assistant', {}, conversationId);
+                console.error('Erro:', error);
+            }
+        }
+
+        function generateFeedbackId() {
+            if (window.crypto && window.crypto.randomUUID) {
+                return window.crypto.randomUUID();
+            }
+            return `fb_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+        }
+
+        // ============================================================================
+        // 💬 ADICIONAR MENSAGEM COM SUPORTE A MARKDOWN
+        // ============================================================================
+        function addMessage(text, type, options = {}, conversationId = activeConversationId || 'neoson') {
+            const targetConversationId = conversationId || activeConversationId || 'neoson';
+            const conversation = conversations.get(targetConversationId) || ensureConversation(getAgentById(targetConversationId));
+            const entryOptions = { ...options };
+            if (type !== 'user' && !entryOptions.agentName) {
+                entryOptions.agentName = conversation.displayName || 'Neoson';
+            }
+            if (type === 'user') {
+                conversation.lastUserMessage = text;
+            } else if (type === 'assistant' || type === 'agent') {
+                if (!entryOptions.feedbackId) {
+                    entryOptions.feedbackId = generateFeedbackId();
+                }
+                if (!entryOptions.pergunta) {
+                    entryOptions.pergunta = conversation.lastUserMessage || 'Pergunta não informada';
+                }
+                if (!entryOptions.classificacao) {
+                    entryOptions.classificacao = 'geral';
+                }
+            }
+            conversation.messages.push({ text, type, options: entryOptions });
+
+            if (activeConversationId === targetConversationId) {
+                renderConversationMessages(conversation);
+            }
         }
 
         // ============================================================================
@@ -3384,6 +5704,8 @@
         let typingCounter = 0;
 
         function addTypingIndicator() {
+            if (!messagesContainer) return null;
+            showMessagesState();
             const id = `typing-${typingCounter++}`;
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message message-assistant';
@@ -3433,13 +5755,14 @@
         const clearBtn = document.getElementById('clearBtn');
         if (clearBtn) {
             clearBtn.addEventListener('click', () => {
-                if (confirm('Deseja limpar todas as mensagens?')) {
-                    messagesContainer.innerHTML = '';
-                    messagesContainer.classList.add('hidden');
-                    welcomeScreen.classList.remove('hidden');
-                    inputContainer.classList.add('centered');
-                    inputContainer.classList.remove('bottom');
-                    hasMessages = false;
+                const conversation = conversations.get(activeConversationId);
+                if (!conversation || !conversation.messages.length) {
+                    return;
+                }
+
+                if (confirm('Deseja limpar todas as mensagens desta conversa?')) {
+                    conversation.messages = [];
+                    renderConversationMessages(conversation);
                 }
             });
         }
@@ -3450,18 +5773,25 @@
         const exportBtn = document.getElementById('exportBtn');
         if (exportBtn) {
             exportBtn.addEventListener('click', () => {
-                const messages = Array.from(messagesContainer.querySelectorAll('.message'));
-                const text = messages.map(msg => {
-                    const type = msg.classList.contains('message-user') ? 'Usuário' : 'Neoson';
-                    const content = msg.querySelector('.message-text').textContent;
-                    return `${type}: ${content}`;
+                const conversation = conversations.get(activeConversationId);
+                if (!conversation || !conversation.messages.length) {
+                    alert('Nenhuma mensagem para exportar.');
+                    return;
+                }
+
+                const text = conversation.messages.map((entry) => {
+                    const prefix = entry.type === 'user' ? 'Usuário' : 'Agente';
+                    const content = (entry.options && entry.options.agentName)
+                        ? `[${entry.options.agentName}] ${entry.text}`
+                        : entry.text;
+                    return `${prefix}: ${content}`;
                 }).join('\n\n');
                 
                 const blob = new Blob([text], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `neoson-chat-${new Date().toISOString()}.txt`;
+                a.download = `neoson-chat-${activeConversationId}-${new Date().toISOString()}.txt`;
                 a.click();
             });
         }
@@ -3510,6 +5840,7 @@
             })
             .then(data => {
                 if (data.username) {
+                    currentUserLogin = data.username;
                     // Atualizar sidebar
                     document.getElementById('userName').textContent = data.username;
                     document.getElementById('userRole').textContent = data.role || 'User';
@@ -3584,6 +5915,10 @@
         // ============================================================================
         
         function showTab(tabName) {
+            if (tabName !== 'chat') {
+                hideNewChatView();
+            }
+
             const preferencesView = document.getElementById('preferencesView');
             const knowledgeView = document.getElementById('knowledgeView');
             const factoryView = document.getElementById('factoryView');
@@ -3655,37 +5990,11 @@
         }
 
         // ============================================================================
-        // � NOVA CONVERSA
+        // 🆕 NOVA CONVERSA
         // ============================================================================
         
         function startNewChat() {
-            console.log('Iniciando nova conversa...');
-            
-            // Voltar para a view de chat
-            showTab('chat');
-            
-            // Limpar mensagens (exceto a de boas-vindas se necessário)
-            if (messagesContainer) {
-                messagesContainer.innerHTML = '';
-            }
-            
-            // Mostrar tela de boas-vindas novamente
-            if (welcomeScreen) {
-                welcomeScreen.style.display = 'flex';
-                messagesContainer.style.display = 'none';
-            }
-            
-            // Limpar input
-            if (messageInput) {
-                messageInput.value = '';
-                messageInput.style.height = 'auto';
-                sendBtn.disabled = true;
-            }
-            
-            // Resetar flag de mensagens
-            hasMessages = false;
-            
-            console.log('Nova conversa iniciada com sucesso!');
+            showNewChatView();
         }
 
         // ============================================================================
@@ -4039,33 +6348,45 @@
             
             // Mostrar modal
             modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
         }
         
         function closeAgentModal() {
             const modal = document.getElementById('agentModal');
             modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
             currentAgentData = null;
         }
         
         function startChatWithAgent() {
-            if (currentAgentData) {
-                // Voltar para o chat
-                showTab('chat');
-                
-                // Fechar modal
-                closeAgentModal();
-                
-                // Colocar mensagem sugerida no input
-                const agentName = currentAgentData.name;
-                messageInput.value = `Olá! Gostaria de conversar com ${agentName}`;
-                messageInput.focus();
-                
-                // Auto-ajustar altura do textarea
+            if (!currentAgentData) return;
+
+            showTab('chat');
+            closeAgentModal();
+
+            const identifier = currentAgentData.identifier || 'neoson';
+            let agent = agentCatalog.find(a => a.identifier === identifier);
+            if (!agent) {
+                agent = {
+                    identifier,
+                    name: currentAgentData.name || identifier,
+                    specialty: currentAgentData.specialty || '',
+                    endpoint: currentAgentData.ask_endpoint || currentAgentData.endpoint || null,
+                    type: currentAgentData.type
+                };
+                agentCatalog.push(agent);
+                populateConversationPicker();
+            }
+
+            ensureConversation(agent);
+            setActiveConversation(identifier);
+            focusMessageInput();
+            if (messageInput) {
+                messageInput.value = '';
                 messageInput.style.height = 'auto';
-                messageInput.style.height = messageInput.scrollHeight + 'px';
-                
-                // Habilitar botão de enviar
-                sendBtn.disabled = false;
+                sendBtn.disabled = true;
             }
         }
         
@@ -4076,9 +6397,19 @@
             }
         });
         
-        // Fechar modal com ESC
+        // Fechar modais com ESC
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                if (newChatView && newChatView.classList.contains('active')) {
+                    hideNewChatView();
+                    return;
+                }
+
+                if (conversationPicker && conversationPicker.classList.contains('active')) {
+                    hideConversationPicker();
+                    return;
+                }
+
                 const modal = document.getElementById('agentModal');
                 if (modal.classList.contains('active')) {
                     closeAgentModal();

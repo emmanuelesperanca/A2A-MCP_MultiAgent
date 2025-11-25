@@ -160,7 +160,8 @@ class PostgresDAL(BaseDAL):
             
             # Query base para busca por similaridade coseno
             query = f"""
-                SELECT *, 
+                SELECT *,
+                       conteudo_original AS conteudo,
                        1 - (vetor <=> %s::vector) as similarity_score
                 FROM {quoted_table}
             """

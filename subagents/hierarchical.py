@@ -24,7 +24,7 @@ class SubSpecialtyRule:
     target_subagent: str
     keywords: List[str]
     description: str
-    confidence_threshold: float = 0.3
+    confidence_threshold: float = 0.1
     priority: int = 1  # Maior número = maior prioridade
 
 
@@ -309,7 +309,7 @@ class TIHierarchicalAgent(HierarchicalAgent):
         )
 
         # Threshold para aprovação: 0.50 (50%)
-        is_valid = overall_score >= 0.20
+        is_valid = overall_score >= 0.10
         
         # Log detalhado para debugging
         print(f"\n{'='*60}")
